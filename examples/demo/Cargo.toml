@@ -1,0 +1,14 @@
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "demo"
+path = "demo.rs"
+
+[dependencies]
+tilt-sdk = { path = "../../crates/tilt-sdk" }
+tilt-sdk-cloudengine = { path = "../../crates/tilt-sdk-cloudengine" }
+tokio = { version = "1.49", features = ["rt-multi-thread", "macros"] }
+anyhow = "1.0"

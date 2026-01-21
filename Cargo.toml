@@ -1,0 +1,38 @@
+[workspace]
+members = [
+    "crates/tilt-sdk",
+    "crates/tilt-sdk-cloudengine",
+    "examples/tilt-cli"
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Stanislav Bolshakov <st.bolshakov@gmail.com>"]
+description = "T1LT SDK (T1 Cloud Layer for Tasks)"
+repository = "https://github.com/tiltcloud/tilt-sdk-rust"
+license = "MIT"
+
+[workspace.dependencies]
+futures = "0.3"
+http = "1.0"
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+tokio = { version = "1.49", features = ["rt-multi-thread", "macros"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json", "fmt"] }
+url = "2.5"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+
+[profile.dev]
+debug = true
+
+[profile.test]
+opt-level = 0
