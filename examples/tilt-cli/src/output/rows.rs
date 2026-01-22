@@ -144,6 +144,28 @@ pub struct NetworkRow {
 impl_table_row!(NetworkRow, id, name, status, description, created);
 
 #[derive(Debug)]
+pub struct NetworkRowLong {
+    pub id: String,
+    pub name: String,
+    pub status: String,
+    pub dhcp: String,
+    pub description: String,
+    pub shared: String,
+    pub created: String,
+}
+
+impl_table_row!(
+    NetworkRowLong,
+    id,
+    name,
+    status,
+    dhcp,
+    description,
+    shared,
+    created
+);
+
+#[derive(Debug)]
 pub struct VolumeRow {
     pub id: String,
     pub name: String,
@@ -210,6 +232,32 @@ impl_table_row!(
     device,
     created_at,
     updated_at
+);
+
+#[derive(Debug)]
+pub struct SubnetRowLong {
+    pub id: String,
+    pub name: String,
+    pub ipam: String,
+    pub network: String,
+    pub region: String,
+    pub status: String,
+    pub dhcp: String,
+    pub description: String,
+    pub shared: String,
+}
+
+impl_table_row!(
+    SubnetRowLong,
+    id,
+    name,
+    ipam,
+    network,
+    region,
+    status,
+    dhcp,
+    description,
+    shared
 );
 
 #[derive(Debug)]
@@ -324,13 +372,12 @@ impl_table_row!(RegionRow, id, name, description);
 pub struct SubnetRow {
     pub id: String,
     pub name: String,
-    pub cidr: String,
-    pub gateway_ip: String,
+    pub ipam: String,
     pub network: String,
     pub status: String,
 }
 
-impl_table_row!(SubnetRow, id, name, cidr, gateway_ip, network, status);
+impl_table_row!(SubnetRow, id, name, ipam, network, status);
 
 #[derive(Debug)]
 pub struct NetworkItemRow {

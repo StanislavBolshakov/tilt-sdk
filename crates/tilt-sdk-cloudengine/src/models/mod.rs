@@ -18,10 +18,10 @@ pub use compute::{
 };
 
 pub use network::{
-    FloatingIp, FloatingIpInfo, FloatingIps, InstanceItem, IpAddress, Network, NetworkInterface,
-    NetworkItem, Networks, NicPort, Ports, RouteTableNetwork, RouteTableRegion, RouteTableRoute,
-    RouteTableStatus, RouteTables, SecurityGroup, SecurityGroupRule, SecurityGroups, Subnets,
-    VirtualIp, VirtualIpFixedIp, VirtualIps,
+    DhcpDns, DhcpSettings, FloatingIp, FloatingIpInfo, FloatingIps, InstanceItem, IpAddress,
+    Network, NetworkInterface, NetworkItem, Networks, NicPort, Ports, RouteTableNetwork,
+    RouteTableRegion, RouteTableRoute, RouteTableStatus, RouteTables, SecurityGroup,
+    SecurityGroupRule, SecurityGroups, Subnets, VirtualIp, VirtualIpFixedIp, VirtualIps,
 };
 
 pub use routers::{RouterNic, RouterStatus, Routers};

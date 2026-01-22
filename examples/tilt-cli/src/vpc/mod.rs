@@ -18,6 +18,8 @@ pub enum NetworkAction {
 pub struct NetworkListOpts {
     #[arg(short, long, help = "Output format [table]")]
     pub format: Option<OutputFormat>,
+    #[arg(long, help = "Show detailed info")]
+    pub long: bool,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -35,6 +37,8 @@ pub struct SubnetListOpts {
     pub format: Option<OutputFormat>,
     #[arg(short, long, help = "Filter by network ID")]
     pub network_id: Option<String>,
+    #[arg(long, help = "Show detailed info")]
+    pub long: bool,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -205,9 +209,9 @@ pub async fn handle_network_action(
     format: Option<OutputFormat>,
 ) {
     match action {
-        NetworkAction::List { .. } => match commands::list_networks(compute).await {
+        NetworkAction::List { list_opts } => match commands::list_networks(compute).await {
             Ok(networks) => {
-                let table = commands::format_network_rows(&networks);
+                let table = commands::format_network_rows(&networks, list_opts.long);
                 match format.unwrap_or(OutputFormat::Table) {
                     OutputFormat::Table => {
                         println!("{}", table);
@@ -238,7 +242,7 @@ pub async fn handle_subnet_action(
         SubnetAction::List { list_opts } => {
             match commands::list_subnets(compute, list_opts.network_id.as_deref()).await {
                 Ok(subnets) => {
-                    let table = commands::format_subnet_rows(&subnets);
+                    let table = commands::format_subnet_rows(&subnets, list_opts.long);
                     match format.unwrap_or(OutputFormat::Table) {
                         OutputFormat::Table => {
                             println!("{}", table);

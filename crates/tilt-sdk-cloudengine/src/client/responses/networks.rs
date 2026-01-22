@@ -7,6 +7,24 @@ use crate::models::common::LogSchemaWarnings;
 pub type NetworksResponse = Vec<NetworkWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+pub struct DhcpDnsWrapper {
+    #[serde(default)]
+    pub method: String,
+    #[serde(default)]
+    pub reverse_resolution: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct DhcpSettingsWrapper {
+    #[serde(default)]
+    pub dns: DhcpDnsWrapper,
+    #[serde(default)]
+    pub domain_name: Option<String>,
+    #[serde(default)]
+    pub ntp_servers: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
 #[serde(default)]
 pub struct NetworkWrapper {
     pub id: uuid::Uuid,
@@ -16,6 +34,8 @@ pub struct NetworkWrapper {
     pub create_time: Option<String>,
     #[serde(default)]
     pub shared_from: Option<SharedFromObject>,
+    #[serde(default)]
+    pub dhcp_settings: Option<DhcpSettingsWrapper>,
     #[serde(flatten)]
     pub _extra: HashMap<String, Value>,
 }
@@ -38,6 +58,14 @@ impl From<NetworkWrapper> for crate::models::Networks {
             description: wrapper.description,
             create_time: wrapper.create_time,
             shared_from: wrapper.shared_from.map(|s| s.id),
+            dhcp_settings: wrapper.dhcp_settings.map(|d| crate::models::DhcpSettings {
+                dns: crate::models::DhcpDns {
+                    method: d.dns.method,
+                    reverse_resolution: d.dns.reverse_resolution,
+                },
+                domain_name: d.domain_name,
+                ntp_servers: d.ntp_servers,
+            }),
         }
     }
 }

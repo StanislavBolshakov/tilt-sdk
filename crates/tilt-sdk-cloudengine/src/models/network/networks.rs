@@ -1,6 +1,20 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct DhcpDns {
+    pub method: String,
+    #[serde(default)]
+    pub reverse_resolution: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct DhcpSettings {
+    pub dns: DhcpDns,
+    pub domain_name: Option<String>,
+    pub ntp_servers: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Networks {
     pub id: Uuid,
@@ -9,6 +23,7 @@ pub struct Networks {
     pub description: Option<String>,
     pub create_time: Option<String>,
     pub shared_from: Option<String>,
+    pub dhcp_settings: Option<DhcpSettings>,
 }
 
 pub type Network = Networks;

@@ -4,8 +4,9 @@ pub mod route_tables;
 pub mod subnets;
 
 pub use networks::{
-    FloatingIp, FloatingIpInfo, FloatingIps, IpAddress, Network, NetworkInterface, Networks,
-    SecurityGroup, SecurityGroupRule, SecurityGroups, VirtualIp, VirtualIpFixedIp, VirtualIps,
+    DhcpDns, DhcpSettings, FloatingIp, FloatingIpInfo, FloatingIps, IpAddress, Network,
+    NetworkInterface, Networks, SecurityGroup, SecurityGroupRule, SecurityGroups, VirtualIp,
+    VirtualIpFixedIp, VirtualIps,
 };
 pub use ports::{InstanceItem, NetworkItem, NicPort, Ports};
 pub use route_tables::{

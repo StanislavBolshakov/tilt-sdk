@@ -4,8 +4,8 @@ use cloudengine::{ComputeError, Networks, SecurityGroupRule, SecurityGroups, Ssh
 use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::{
-    FipRow, InstanceRow, NetworkItemRow, NetworkRow, NicRow, RouteTableRow, RouterRow,
-    SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, VipRow,
+    FipRow, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow,
+    SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
     format_port_tree, format_router_tree, format_table,
 };
 
@@ -51,38 +51,144 @@ pub async fn list_ssh_keys(
     client.list_ssh_keys(limit, page).await
 }
 
-pub fn format_network_rows(networks: &[Networks]) -> String {
-    let rows: Vec<NetworkRow> = networks
-        .iter()
-        .map(|n| NetworkRow {
-            id: n.id.to_string(),
-            name: n.name.clone(),
-            status: n.status.clone(),
-            description: n.description.clone().unwrap_or_else(|| "-".to_string()),
-            created: n
-                .create_time
-                .as_ref()
-                .and_then(|t| t.split('T').next())
-                .unwrap_or("-")
-                .to_string(),
-        })
-        .collect();
-    format_table(&rows)
+pub fn format_network_rows(networks: &[Networks], long: bool) -> String {
+    if long {
+        let rows: Vec<NetworkRowLong> = networks
+            .iter()
+            .map(|n| {
+                let dhcp = n.dhcp_settings.as_ref().map(|d| {
+                    let dns = format!(
+                        "{}/{}",
+                        d.dns.method,
+                        if d.dns.reverse_resolution { "reverse" } else { "no-reverse" }
+                    );
+                    let ntp = if d.ntp_servers.is_empty() {
+                        String::from("-")
+                    } else {
+                        d.ntp_servers.join(", ")
+                    };
+                    format!(
+                        "enabled\nDomain: {}\nDNS: {}\nNTP: {}",
+                        d.domain_name.clone().unwrap_or_else(|| String::from("-")),
+                        dns,
+                        ntp
+                    )
+                }).unwrap_or_else(|| String::from("disabled"));
+
+                let shared = n.shared_from.clone().unwrap_or_else(|| String::from("-"));
+
+                let created = n
+                    .create_time
+                    .as_ref()
+                    .and_then(|t| t.split('T').next())
+                    .unwrap_or("-")
+                    .to_string();
+
+                NetworkRowLong {
+                    id: n.id.to_string(),
+                    name: n.name.clone(),
+                    status: n.status.clone(),
+                    dhcp,
+                    description: n.description.clone().unwrap_or_else(|| String::from("-")),
+                    shared,
+                    created,
+                }
+            })
+            .collect();
+        format_table(&rows)
+    } else {
+        let rows: Vec<NetworkRow> = networks
+            .iter()
+            .map(|n| NetworkRow {
+                id: n.id.to_string(),
+                name: n.name.clone(),
+                status: n.status.clone(),
+                description: n.description.clone().unwrap_or_else(|| "-".to_string()),
+                created: n
+                    .create_time
+                    .as_ref()
+                    .and_then(|t| t.split('T').next())
+                    .unwrap_or("-")
+                    .to_string(),
+            })
+            .collect();
+        format_table(&rows)
+    }
 }
 
-pub fn format_subnet_rows(subnets: &[Subnets]) -> String {
-    let rows: Vec<SubnetRow> = subnets
-        .iter()
-        .map(|s| SubnetRow {
-            id: s.id.to_string(),
-            name: s.name.clone(),
-            cidr: s.cidr.clone(),
-            gateway_ip: s.gateway_ip.clone().unwrap_or_else(|| "-".to_string()),
-            network: s.network_name.clone(),
-            status: s.status.clone(),
-        })
-        .collect();
-    format_table(&rows)
+pub fn format_subnet_rows(subnets: &[Subnets], long: bool) -> String {
+    if long {
+        let rows: Vec<SubnetRowLong> = subnets
+            .iter()
+            .map(|s| {
+                let from = s.shared_from.clone();
+                let to: String = if s.shared_to.is_empty() {
+                    String::new()
+                } else {
+                    format!("To: {}", s.shared_to.join(", "))
+                };
+                let shared = match (from, to.is_empty()) {
+                    (Some(f), true) => format!("From: {}", f),
+                    (Some(f), false) => format!("From: {}, {}", f, to),
+                    (None, false) => to,
+                    (None, true) => String::from("-"),
+                };
+                let dhcp = if s.enable_dhcp {
+                    let settings = s.dhcp_settings.as_ref();
+                    let domain = settings.and_then(|d| d.domain_name.clone()).unwrap_or_else(|| String::from("-"));
+                    let dns = settings.map(|d| format!(
+                        "{}/{}",
+                        d.dns.method,
+                        if d.dns.reverse_resolution { "reverse" } else { "no-reverse" }
+                    )).unwrap_or_else(|| String::from("-"));
+                    let ntp = settings
+                        .map(|d| d.ntp_servers.join(", "))
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or_else(|| String::from("-"));
+                    format!("enabled\n  Domain: {}\n  DNS: {}\n  NTP: {}", domain, dns, ntp)
+                } else {
+                    String::from("disabled")
+                };
+                SubnetRowLong {
+                    id: format!(
+                        "{}\n└── network_id: {}\n└── region_id: {}",
+                        s.id.to_string(),
+                        s.network_id.to_string(),
+                        s.region_id.clone()
+                    ),
+                    name: s.name.clone(),
+                    ipam: format!(
+                        "CIDR: {}\nGateway: {}",
+                        s.cidr,
+                        s.gateway_ip.clone().unwrap_or_else(|| "-".to_string())
+                    ),
+                    network: s.network_name.clone(),
+                    region: s.region_name.clone(),
+                    status: s.status.clone(),
+                    dhcp,
+                    description: s.description.clone().unwrap_or_else(|| "-".to_string()),
+                    shared,
+                }
+            })
+            .collect();
+        format_table(&rows)
+    } else {
+        let rows: Vec<SubnetRow> = subnets
+            .iter()
+            .map(|s| SubnetRow {
+                id: s.id.to_string(),
+                name: s.name.clone(),
+                ipam: format!(
+                    "{} / {}",
+                    s.cidr,
+                    s.gateway_ip.clone().unwrap_or_else(|| "-".to_string())
+                ),
+                network: s.network_name.clone(),
+                status: s.status.clone(),
+            })
+            .collect();
+        format_table(&rows)
+    }
 }
 
 pub fn format_port_rows(items: &[NetworkItem], long: bool, filter: PortFilter) -> String {

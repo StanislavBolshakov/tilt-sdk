@@ -10,9 +10,11 @@ pub struct Subnets {
     pub description: Option<String>,
     pub gateway_ip: Option<String>,
     pub enable_dhcp: bool,
+    pub dhcp_settings: Option<super::networks::DhcpSettings>,
     pub network_id: Uuid,
     pub network_name: String,
     pub region_id: String,
     pub region_name: String,
     pub shared_from: Option<String>,
+    pub shared_to: Vec<String>,
 }
