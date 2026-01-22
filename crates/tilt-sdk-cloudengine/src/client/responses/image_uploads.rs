@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::StatusEnum;
 use serde::Deserialize;
 
@@ -10,6 +11,7 @@ pub struct ImageUploadsResponse {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct ImageUploadWrapper {
     #[serde(default)]
     pub id: String,
@@ -25,20 +27,16 @@ pub struct ImageUploadWrapper {
     pub create_dt: String,
     #[serde(default)]
     pub update_dt: String,
-}
-
-#[derive(Debug, Deserialize, Default)]
-pub struct ImageUploadsMeta {
-    #[serde(default)]
-    pub total_count: u32,
-    #[serde(default)]
-    pub previous: Option<String>,
-    #[serde(default)]
-    pub next: Option<String>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 impl From<ImageUploadWrapper> for crate::models::ImageUpload {
     fn from(wrapper: ImageUploadWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/compute/api/v1/projects/{project}/image-uploads");
+
         crate::models::ImageUpload {
             id: wrapper.id.parse().unwrap_or_default(),
             name: wrapper.name,
@@ -49,4 +47,14 @@ impl From<ImageUploadWrapper> for crate::models::ImageUpload {
             update_dt: wrapper.update_dt,
         }
     }
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct ImageUploadsMeta {
+    #[serde(default)]
+    pub total_count: u32,
+    #[serde(default)]
+    pub previous: Option<String>,
+    #[serde(default)]
+    pub next: Option<String>,
 }

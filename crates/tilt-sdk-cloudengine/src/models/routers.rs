@@ -2,25 +2,13 @@ use crate::models::StatusEnum;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize, Default)]
 pub struct RouterNic {
     pub id: Uuid,
     pub name: String,
     pub ip_address: String,
     pub network_name: Option<String>,
     pub subnet_name: Option<String>,
-}
-
-impl Default for RouterNic {
-    fn default() -> Self {
-        RouterNic {
-            id: Uuid::nil(),
-            name: String::new(),
-            ip_address: String::new(),
-            network_name: None,
-            subnet_name: None,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]

@@ -1,9 +1,11 @@
+use crate::log_schema_drift;
 use crate::models::{ListResponse, NestedEntity};
 use serde::Deserialize;
 
 pub type SnapshotsResponse = ListResponse<SnapshotWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct SnapshotWrapper {
     #[serde(default)]
     pub item_id: uuid::Uuid,
@@ -12,6 +14,33 @@ pub struct SnapshotWrapper {
     pub item_type: String,
     #[serde(default)]
     pub data: SnapshotDataWrapper,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+impl From<SnapshotWrapper> for crate::models::Snapshots {
+    fn from(wrapper: SnapshotWrapper) -> Self {
+        log_schema_drift!(
+            wrapper,
+            "/order-service/api/v1/projects/{project}/snapshots"
+        );
+
+        let config = &wrapper.data.config;
+        crate::models::Snapshots {
+            id: wrapper.item_id,
+            name: config.name.clone(),
+            size: config.size,
+            status: config.status.clone(),
+            volume_id: config.volume_id,
+            volume_name: None,
+            volume_type_id: config.volume_type.as_ref().map(|vt| vt.id),
+            volume_type_name: config.volume_type.as_ref().map(|vt| vt.name.clone()),
+            availability_zone: config.availability_zone.as_ref().map(|az| az.name.clone()),
+            created_at: config.created_at.clone(),
+            updated_at: config.updated_at.clone(),
+            description: config.description.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -51,23 +80,3 @@ pub struct SnapshotConfigWrapper {
 pub type VolumeTypeWrapper = NestedEntity<uuid::Uuid>;
 
 pub type AvailabilityZoneWrapper = NestedEntity<String>;
-
-impl From<SnapshotWrapper> for crate::models::Snapshots {
-    fn from(wrapper: SnapshotWrapper) -> Self {
-        let config = &wrapper.data.config;
-        crate::models::Snapshots {
-            id: wrapper.item_id,
-            name: config.name.clone(),
-            size: config.size,
-            status: config.status.clone(),
-            volume_id: config.volume_id,
-            volume_name: None,
-            volume_type_id: config.volume_type.as_ref().map(|vt| vt.id),
-            volume_type_name: config.volume_type.as_ref().map(|vt| vt.name.clone()),
-            availability_zone: config.availability_zone.as_ref().map(|az| az.name.clone()),
-            created_at: config.created_at.clone(),
-            updated_at: config.updated_at.clone(),
-            description: config.description.clone(),
-        }
-    }
-}

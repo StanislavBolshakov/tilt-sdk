@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::ListResponse;
 use chrono::Utc;
 use serde::Deserialize;
@@ -5,6 +6,7 @@ use serde::Deserialize;
 pub type SshKeysResponse = ListResponse<SshKeyWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct SshKeyWrapper {
     #[serde(default)]
     pub id: uuid::Uuid,
@@ -18,10 +20,16 @@ pub struct SshKeyWrapper {
     pub login: String,
     #[serde(default)]
     pub public_keys: Vec<String>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 impl From<SshKeyWrapper> for crate::models::SshKeys {
     fn from(wrapper: SshKeyWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/portal/api/v1/projects/{project}/ssh-keys");
+
         crate::models::SshKeys {
             id: wrapper.id,
             name: wrapper.name,

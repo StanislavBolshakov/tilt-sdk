@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::{InstanceStatus, ListResponse, NestedEntity, StatusEnum};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -15,13 +16,15 @@ fn parse_uuid_or_warn(s: &str, field: &str) -> uuid::Uuid {
 pub type InstancesResponse = ListResponse<InstanceWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct InstanceWrapper {
     #[serde(default)]
     #[serde(rename = "created_row_dt")]
     pub created_row_dt: String,
     #[serde(default)]
-    #[serde(rename = "data")]
     pub data: InstanceDataWrapper,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -99,6 +102,10 @@ pub struct Address {
 
 impl From<InstanceWrapper> for crate::models::Instances {
     fn from(wrapper: InstanceWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/compute/api/v1/projects/{project}/instances");
+
         let config = wrapper.data.config;
         let addresses = config.addresses.unwrap_or_default();
 

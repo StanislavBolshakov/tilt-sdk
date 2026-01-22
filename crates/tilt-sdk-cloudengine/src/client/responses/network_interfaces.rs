@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -6,6 +7,7 @@ pub struct NetworkInterfacesResponse {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct NetworkInterfaceWrapper {
     #[serde(default)]
     pub id: uuid::Uuid,
@@ -19,10 +21,14 @@ pub struct NetworkInterfaceWrapper {
     pub ip_addresses: Vec<IpAddress>,
     #[serde(default)]
     pub instance_id: Option<uuid::Uuid>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 impl From<NetworkInterfaceWrapper> for crate::models::NetworkInterface {
     fn from(wrapper: NetworkInterfaceWrapper) -> Self {
+        wrapper._extra.log_unknown_fields("/order-service/api/v1/projects/{project}/compute/instances/{instance_id}/network-interfaces");
+
         crate::models::NetworkInterface {
             id: wrapper.id,
             network_id: wrapper.network_id,

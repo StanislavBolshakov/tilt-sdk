@@ -1,9 +1,12 @@
+use crate::log_schema_drift;
+use crate::models::common::extensible::LogSchemaWarnings;
 use serde::Deserialize;
 
 pub type SecurityGroupsResponse = Vec<SecurityGroupWrapper>;
 pub type SecurityGroupRulesResponse = Vec<SecurityGroupRuleWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct SecurityGroupWrapper {
     #[serde(default)]
     pub id: uuid::Uuid,
@@ -17,9 +20,12 @@ pub struct SecurityGroupWrapper {
     pub create_time: String,
     #[serde(default)]
     pub update_time: Option<String>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct SecurityGroupRuleWrapper {
     #[serde(default)]
     pub id: uuid::Uuid,
@@ -48,6 +54,8 @@ pub struct SecurityGroupRuleWrapper {
     pub description: Option<String>,
     #[serde(default)]
     pub status: Option<String>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -58,6 +66,10 @@ pub struct RemoteGroupWrapper {
 
 impl From<SecurityGroupWrapper> for crate::models::SecurityGroups {
     fn from(wrapper: SecurityGroupWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/vpc/api/v1/projects/{project}/security-groups");
+
         crate::models::SecurityGroups {
             id: wrapper.id,
             name: wrapper.name,
@@ -71,6 +83,11 @@ impl From<SecurityGroupWrapper> for crate::models::SecurityGroups {
 
 impl From<SecurityGroupRuleWrapper> for crate::models::SecurityGroupRule {
     fn from(wrapper: SecurityGroupRuleWrapper) -> Self {
+        log_schema_drift!(
+            wrapper,
+            "/vpc/api/v1/projects/{project}/security-groups/rules"
+        );
+
         crate::models::SecurityGroupRule {
             id: wrapper.id,
             security_group_id: wrapper.security_group_id,

@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::StatusEnum;
 use chrono::Utc;
 use serde::Deserialize;
@@ -15,6 +16,7 @@ pub struct TaskResponse {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct TaskWrapper {
     #[serde(default)]
     pub id: uuid::Uuid,
@@ -40,10 +42,16 @@ pub struct TaskWrapper {
     pub result: Option<serde_json::Value>,
     #[serde(default)]
     pub error: Option<serde_json::Value>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 impl From<TaskWrapper> for crate::models::Tasks {
     fn from(wrapper: TaskWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/compute/api/v1/projects/{project}/tasks");
+
         crate::models::Tasks {
             id: wrapper.id,
             status: crate::models::TaskStatus::from_string(&wrapper.status),

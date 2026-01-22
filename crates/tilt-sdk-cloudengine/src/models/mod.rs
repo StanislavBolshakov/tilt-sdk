@@ -4,9 +4,12 @@ pub mod network;
 pub mod routers;
 pub mod storage;
 
+#[doc(hidden)]
+pub use crate::log_schema_drift;
+
 pub use common::{
-    AvailabilityZone, ListMeta, ListResponse, NestedEntity, PlacementPolicy, Regions, SshKeys,
-    StatusEnum, TaskStatus, Tasks, parse_datetime,
+    parse_datetime, AvailabilityZone, ListMeta, ListResponse, NestedEntity, PlacementPolicy,
+    Regions, SshKeys, StatusEnum, TaskStatus, Tasks,
 };
 
 pub use compute::{

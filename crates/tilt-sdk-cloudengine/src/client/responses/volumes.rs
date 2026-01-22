@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::{NestedEntity, StatusEnum};
 use serde::Deserialize;
 
@@ -58,6 +59,7 @@ pub struct Capabilities {
 pub type VolumesResponse = crate::ListResponse<VolumeWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct VolumeWrapper {
     #[serde(default)]
     pub item_id: String,
@@ -74,6 +76,8 @@ pub struct VolumeWrapper {
     pub data: VolumeData,
     #[serde(default)]
     pub created_row_dt: String,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -133,6 +137,10 @@ impl From<VolumeTypeWrapper> for crate::models::VolumeType {
 
 impl From<VolumeWrapper> for crate::models::Volumes {
     fn from(wrapper: VolumeWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/order-service/api/v1/projects/{project}/volumes");
+
         let config = wrapper.data.config;
 
         let (attached_server_id, attached_server_name, device) =

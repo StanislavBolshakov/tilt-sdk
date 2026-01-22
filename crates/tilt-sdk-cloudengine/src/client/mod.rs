@@ -8,11 +8,16 @@ use crate::models::{
 use tilt_sdk::Client;
 use uuid::Uuid;
 
+#[macro_use]
 pub mod compute;
+#[macro_use]
 pub mod network;
 pub mod paginate;
+#[macro_use]
 pub mod portal;
+#[macro_use]
 pub mod responses;
+#[macro_use]
 pub mod storage;
 
 pub use network::PortFilter;

@@ -1,9 +1,11 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::{ListResponse, NestedEntity, RouterNic, RouterStatus, Routers, StatusEnum};
 use serde::Deserialize;
 
 pub type RoutersResponse = ListResponse<RouterWrapper>;
 
 #[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
 pub struct RouterWrapper {
     #[serde(default)]
     pub item_id: uuid::Uuid,
@@ -17,6 +19,8 @@ pub struct RouterWrapper {
     pub created_row_dt: String,
     #[serde(default)]
     pub children_list: Vec<RouterNicWrapper>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -80,6 +84,10 @@ pub struct RouterNicIpWrapper {
 
 impl From<RouterWrapper> for Routers {
     fn from(wrapper: RouterWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/vpc/api/v1/projects/{project}/snat-routers");
+
         Routers {
             id: wrapper.item_id,
             name: wrapper.data.config.name,

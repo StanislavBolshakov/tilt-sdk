@@ -1,9 +1,11 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::ListResponse;
 use serde::Deserialize;
 
 pub type FlavorsResponse = ListResponse<FlavorWrapper>;
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct FlavorWrapper {
     #[serde(default)]
     pub id: uuid::Uuid,
@@ -19,10 +21,16 @@ pub struct FlavorWrapper {
     pub gpus: u64,
     #[serde(default)]
     pub extra_specs: Option<ExtraSpec>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 impl From<FlavorWrapper> for crate::models::Flavors {
     fn from(wrapper: FlavorWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/compute/api/v1/projects/{project}/flavors");
+
         crate::models::Flavors {
             id: wrapper.id,
             name: wrapper.name,

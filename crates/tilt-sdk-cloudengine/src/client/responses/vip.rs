@@ -1,3 +1,4 @@
+use crate::log_schema_drift;
 use crate::models::network::VirtualIp;
 use crate::models::{FloatingIpInfo, ListResponse, NestedEntity, VirtualIpFixedIp};
 use serde::Deserialize;
@@ -5,6 +6,7 @@ use serde::Deserialize;
 pub type VipsResponse = ListResponse<VipWrapper>;
 
 #[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
 pub struct VipWrapper {
     #[serde(default)]
     pub item_id: uuid::Uuid,
@@ -13,67 +15,54 @@ pub struct VipWrapper {
     #[serde(default)]
     #[serde(rename = "created_row_dt")]
     pub created_row_dt: String,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct VipDataWrapper {
-    #[serde(default)]
-    pub config: VipConfigWrapper,
-    #[serde(default)]
     pub state: String,
+    pub config: VipConfigWrapper,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct VipConfigWrapper {
-    #[serde(default)]
-    pub id: uuid::Uuid,
-    #[serde(default)]
     pub name: String,
-    #[serde(default)]
+    #[serde(rename = "mac_address")]
     pub mac_address: String,
-    #[serde(default)]
-    #[serde(rename = "l2_enabled")]
-    pub l2_enabled: bool,
-    #[serde(default)]
-    #[serde(rename = "floating_ip")]
-    pub floating_ip: Option<FloatingIpInfoWrapper>,
-    #[serde(default)]
-    #[serde(rename = "fixed_ips")]
     pub fixed_ips: Vec<VipFixedIpWrapper>,
-    #[serde(default)]
-    pub network: Option<NestedEntity>,
-    #[serde(default)]
-    pub subnet: Option<NestedEntity>,
-    #[serde(default)]
+    pub network: Option<NestedEntity<String>>,
+    pub subnet: Option<NestedEntity<String>>,
+    #[serde(rename = "floating_ip")]
+    pub floating_ip: Option<VipFloatingIpWrapper>,
     #[serde(rename = "address_mode")]
-    pub address_mode: String,
+    pub address_mode: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct VipFixedIpWrapper {
-    #[serde(default)]
     pub id: uuid::Uuid,
-    #[serde(default)]
     #[serde(rename = "subnet_id")]
     pub subnet_id: uuid::Uuid,
-    #[serde(default)]
     #[serde(rename = "ip_address")]
     pub ip_address: String,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
-pub struct FloatingIpInfoWrapper {
-    #[serde(default)]
+pub struct VipFloatingIpWrapper {
     pub id: uuid::Uuid,
-    #[serde(default)]
-    pub bandwidth: u64,
-    #[serde(default)]
+    pub bandwidth: Option<String>,
     #[serde(rename = "ip_address")]
     pub ip_address: String,
 }
 
 impl From<VipWrapper> for VirtualIp {
     fn from(wrapper: VipWrapper) -> Self {
+        log_schema_drift!(
+            wrapper,
+            "/vpc/api/v1/projects/{project}/virtual-ip-addresses"
+        );
+
         let fixed_ips: Vec<VirtualIpFixedIp> = wrapper
             .data
             .config
@@ -96,7 +85,7 @@ impl From<VipWrapper> for VirtualIp {
             status: wrapper.data.state,
             floating_ip: wrapper.data.config.floating_ip.map(|fip| FloatingIpInfo {
                 id: fip.id,
-                bandwidth: fip.bandwidth,
+                bandwidth: fip.bandwidth.unwrap_or_default().parse().unwrap_or(0),
                 ip_address: fip.ip_address,
             }),
             fixed_ips,
@@ -104,7 +93,7 @@ impl From<VipWrapper> for VirtualIp {
             network_name: network.as_ref().map(|n| n.name.clone()),
             subnet_id: subnet.map(|s| s.id.clone()),
             subnet_name: subnet.as_ref().map(|s| s.name.clone()),
-            address_mode: wrapper.data.config.address_mode,
+            address_mode: wrapper.data.config.address_mode.unwrap_or_default(),
         }
     }
 }

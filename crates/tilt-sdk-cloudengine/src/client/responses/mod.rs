@@ -2,7 +2,6 @@ pub mod availability_zones;
 pub mod backups;
 pub mod fip;
 pub mod flavors;
-pub mod image_responses;
 pub mod image_uploads;
 pub mod images;
 pub mod instances;
@@ -25,13 +24,12 @@ pub use availability_zones::{AvailabilityZoneWrapper, AvailabilityZonesResponse}
 pub use backups::{BackupWrapper, BackupsResponse};
 pub use fip::{FipWrapper, FloatingIpsResponse};
 pub use flavors::{FlavorWrapper, FlavorsResponse};
-pub use image_responses::{
-    ImageResponse, ProjectImageConfig, ProjectImageData, ProjectImageWrapper,
-    ProjectImagesResponse, SharedImageConfig, SharedImageData, SharedImageWrapper,
-    SharedImagesResponse,
-};
 pub use image_uploads::{ImageUploadWrapper, ImageUploadsResponse};
-pub use images::ImageWrapper;
+pub use images::{
+    ImageResponse, ImageWrapper, ImagesMeta, ProjectImageConfig, ProjectImageData,
+    ProjectImageWrapper, ProjectImagesResponse, SharedImageConfig, SharedImageData,
+    SharedImageWrapper, SharedImagesResponse,
+};
 pub use instances::{InstanceWrapper, InstancesResponse};
 pub use network_interfaces::{NetworkInterfaceWrapper, NetworkInterfacesResponse};
 pub use networks::{NetworkWrapper, NetworksResponse};

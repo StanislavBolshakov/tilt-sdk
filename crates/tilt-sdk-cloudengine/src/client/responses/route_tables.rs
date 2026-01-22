@@ -1,3 +1,4 @@
+use crate::log_schema_drift;
 use crate::models::common::status::StatusEnum;
 use crate::models::{
     ListResponse, RouteTableNetwork, RouteTableRegion, RouteTableRoute, RouteTableStatus,
@@ -69,6 +70,7 @@ impl From<RouteTableNetworkWrapper> for RouteTableNetwork {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct RouteTableWrapper {
     pub name: String,
     #[serde(default)]
@@ -81,10 +83,17 @@ pub struct RouteTableWrapper {
     pub region: RouteTableRegionWrapper,
     #[serde(default)]
     pub networks: Vec<RouteTableNetworkWrapper>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 impl From<RouteTableWrapper> for RouteTables {
     fn from(wrapper: RouteTableWrapper) -> Self {
+        log_schema_drift!(
+            wrapper,
+            "/vpc/api/v1/projects/{project}/network_route_tables"
+        );
+
         RouteTables {
             id: uuid::Uuid::parse_str(&wrapper.id).unwrap_or_else(|_| uuid::Uuid::nil()),
             name: wrapper.name,

@@ -1,3 +1,4 @@
+use crate::models::common::extensible::LogSchemaWarnings;
 use crate::models::NestedEntity;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -24,6 +25,7 @@ pub struct PortsMeta {
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
+#[serde(default)]
 pub struct PortWrapper {
     #[serde(default)]
     pub item_id: String,
@@ -35,6 +37,8 @@ pub struct PortWrapper {
     pub type_field: String,
     #[serde(default, rename = "created_row_dt")]
     pub created_at: String,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -156,9 +160,13 @@ impl ParentItem {
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct ParentData {
     #[serde(default)]
+    pub state: String,
+    #[serde(default)]
     pub config: ParentConfig,
     #[serde(default)]
-    pub state: String,
+    pub created_at: String,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -305,6 +313,10 @@ impl PortWrapper {
 
 impl From<PortWrapper> for crate::models::Ports {
     fn from(wrapper: PortWrapper) -> Self {
+        wrapper
+            ._extra
+            .log_unknown_fields("/vpc/api/v1/projects/{project}/network-interfaces");
+
         let config = &wrapper.data.config;
         let first_ip = config.fixed_ips.first();
         let parent_config = wrapper
