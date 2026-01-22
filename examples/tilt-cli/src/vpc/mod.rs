@@ -203,6 +203,8 @@ pub enum FipAction {
 pub struct FipListOpts {
     #[arg(short, long, help = "Output format [table]")]
     pub format: Option<OutputFormat>,
+    #[arg(long, help = "Show detailed info")]
+    pub long: bool,
 }
 
 pub async fn handle_network_action(
@@ -542,9 +544,9 @@ pub async fn handle_fip_action(
     format: Option<OutputFormat>,
 ) {
     match action {
-        FipAction::List { .. } => match commands::list_floating_ips(compute).await {
+        FipAction::List { list_opts } => match commands::list_floating_ips(compute).await {
             Ok(fips) => {
-                let table = commands::format_fip_rows(&fips);
+                let table = commands::format_fip_rows(&fips, list_opts.long);
                 match format.unwrap_or(OutputFormat::Table) {
                     OutputFormat::Table => {
                         println!("{}", table);

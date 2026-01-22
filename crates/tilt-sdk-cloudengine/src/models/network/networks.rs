@@ -115,6 +115,8 @@ pub struct FloatingIp {
     pub status: String,
     pub parent_item_id: Option<Uuid>,
     pub parent_item_type: Option<String>,
+    pub created_time: Option<String>,
+    pub region_id: Option<String>,
 }
 
 pub type FloatingIps = FloatingIp;

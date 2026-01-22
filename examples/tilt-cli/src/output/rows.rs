@@ -641,9 +641,22 @@ pub struct FipRow {
     pub ip_address: String,
     pub bandwidth: String,
     pub status: String,
+    pub created: String,
 }
 
-impl_table_row!(FipRow, id, ip_address, bandwidth, status);
+impl_table_row!(FipRow, id, ip_address, bandwidth, status, created);
+
+#[derive(Debug)]
+pub struct FipRowLong {
+    pub id: String,
+    pub ip_address: String,
+    pub bandwidth: String,
+    pub status: String,
+    pub parent: String,
+    pub created: String,
+}
+
+impl_table_row!(FipRowLong, id, ip_address, bandwidth, status, parent, created);
 
 #[derive(Debug)]
 pub struct PlacementRow {

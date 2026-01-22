@@ -4,7 +4,7 @@ use cloudengine::{ComputeError, Networks, SecurityGroupRule, SecurityGroups, Ssh
 use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::{
-    FipRow, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow,
+    FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow,
     SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
     VipRowLong, format_port_tree, format_router_tree, format_table,
 };
@@ -471,15 +471,54 @@ pub async fn list_floating_ips(
     client.list_floating_ips().await
 }
 
-pub fn format_fip_rows(fips: &[FloatingIps]) -> String {
-    let rows: Vec<FipRow> = fips
-        .iter()
-        .map(|f| FipRow {
-            id: f.id.to_string(),
-            ip_address: f.floating_ip_address.clone(),
-            bandwidth: format!("{} Mbps", f.bandwidth),
-            status: f.status.clone(),
-        })
-        .collect();
-    format_table(&rows)
+pub fn format_fip_rows(fips: &[FloatingIps], long: bool) -> String {
+    if long {
+        let rows: Vec<FipRowLong> = fips
+            .iter()
+            .map(|f| {
+                let created = f
+                    .created_time
+                    .as_ref()
+                    .and_then(|t| t.split('T').next())
+                    .unwrap_or("-")
+                    .to_string();
+
+                let parent = f
+                    .parent_item_id
+                    .as_ref()
+                    .map(|pid| {
+                        let ptype = f.parent_item_type.clone().unwrap_or_else(|| "unknown".to_string());
+                        format!("{} ({})", ptype, pid.to_string())
+                    })
+                    .unwrap_or_else(|| "-".to_string());
+
+                FipRowLong {
+                    id: f.id.to_string(),
+                    ip_address: f.floating_ip_address.clone(),
+                    bandwidth: format!("{} Mbps", f.bandwidth),
+                    status: f.status.clone(),
+                    parent,
+                    created,
+                }
+            })
+            .collect();
+        format_table(&rows)
+    } else {
+        let rows: Vec<FipRow> = fips
+            .iter()
+            .map(|f| FipRow {
+                id: f.id.to_string(),
+                ip_address: f.floating_ip_address.clone(),
+                bandwidth: format!("{} Mbps", f.bandwidth),
+                status: f.status.clone(),
+                created: f
+                    .created_time
+                    .as_ref()
+                    .and_then(|t| t.split('T').next())
+                    .unwrap_or("-")
+                    .to_string(),
+            })
+            .collect();
+        format_table(&rows)
+    }
 }
