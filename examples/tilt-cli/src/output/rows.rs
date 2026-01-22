@@ -610,6 +610,32 @@ impl_table_row!(
 );
 
 #[derive(Debug)]
+pub struct VipRowLong {
+    pub id: String,
+    pub name: String,
+    pub status: String,
+    pub mac_address: String,
+    pub floating_ip: String,
+    pub fixed_ip: String,
+    pub l2_enabled: String,
+    pub address_mode: String,
+    pub created: String,
+}
+
+impl_table_row!(
+    VipRowLong,
+    id,
+    name,
+    status,
+    mac_address,
+    floating_ip,
+    fixed_ip,
+    l2_enabled,
+    address_mode,
+    created
+);
+
+#[derive(Debug)]
 pub struct FipRow {
     pub id: String,
     pub ip_address: String,

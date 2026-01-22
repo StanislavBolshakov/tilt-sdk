@@ -186,6 +186,8 @@ pub enum VipAction {
 pub struct VipListOpts {
     #[arg(short, long, help = "Output format [table]")]
     pub format: Option<OutputFormat>,
+    #[arg(long, help = "Show detailed info")]
+    pub long: bool,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -513,9 +515,9 @@ pub async fn handle_vip_action(
     format: Option<OutputFormat>,
 ) {
     match action {
-        VipAction::List { .. } => match commands::list_vips(compute).await {
+        VipAction::List { list_opts } => match commands::list_vips(compute).await {
             Ok(vips) => {
-                let table = commands::format_vip_rows(&vips);
+                let table = commands::format_vip_rows(&vips, list_opts.long);
                 match format.unwrap_or(OutputFormat::Table) {
                     OutputFormat::Table => {
                         println!("{}", table);

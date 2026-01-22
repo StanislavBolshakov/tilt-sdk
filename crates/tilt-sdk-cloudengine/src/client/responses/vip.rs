@@ -33,10 +33,13 @@ pub struct VipConfigWrapper {
     pub fixed_ips: Vec<VipFixedIpWrapper>,
     pub network: Option<NestedEntity<String>>,
     pub subnet: Option<NestedEntity<String>>,
+    pub region: Option<NestedEntity<String>>,
     #[serde(rename = "floating_ip")]
     pub floating_ip: Option<VipFloatingIpWrapper>,
     #[serde(rename = "address_mode")]
     pub address_mode: Option<String>,
+    #[serde(rename = "l2_enabled")]
+    pub l2_enabled: bool,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -51,7 +54,7 @@ pub struct VipFixedIpWrapper {
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct VipFloatingIpWrapper {
     pub id: uuid::Uuid,
-    pub bandwidth: Option<String>,
+    pub bandwidth: u64,
     #[serde(rename = "ip_address")]
     pub ip_address: String,
 }
@@ -77,6 +80,7 @@ impl From<VipWrapper> for VirtualIp {
 
         let network = wrapper.data.config.network.as_ref();
         let subnet = wrapper.data.config.subnet.as_ref();
+        let region = wrapper.data.config.region.as_ref();
 
         VirtualIp {
             id: wrapper.item_id,
@@ -85,7 +89,7 @@ impl From<VipWrapper> for VirtualIp {
             status: wrapper.data.state,
             floating_ip: wrapper.data.config.floating_ip.map(|fip| FloatingIpInfo {
                 id: fip.id,
-                bandwidth: fip.bandwidth.unwrap_or_default().parse().unwrap_or(0),
+                bandwidth: fip.bandwidth,
                 ip_address: fip.ip_address,
             }),
             fixed_ips,
@@ -93,7 +97,11 @@ impl From<VipWrapper> for VirtualIp {
             network_name: network.as_ref().map(|n| n.name.clone()),
             subnet_id: subnet.map(|s| s.id.clone()),
             subnet_name: subnet.as_ref().map(|s| s.name.clone()),
+            region_id: region.map(|r| r.id.clone()),
+            region_name: region.as_ref().map(|r| r.name.clone()),
+            l2_enabled: wrapper.data.config.l2_enabled,
             address_mode: wrapper.data.config.address_mode.unwrap_or_default(),
+            created_time: Some(wrapper.created_row_dt),
         }
     }
 }

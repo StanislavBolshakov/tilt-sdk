@@ -84,7 +84,11 @@ pub struct VirtualIp {
     pub network_name: Option<String>,
     pub subnet_id: Option<String>,
     pub subnet_name: Option<String>,
+    pub region_id: Option<String>,
+    pub region_name: Option<String>,
+    pub l2_enabled: bool,
     pub address_mode: String,
+    pub created_time: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

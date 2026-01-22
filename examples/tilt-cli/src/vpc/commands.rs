@@ -6,7 +6,7 @@ use tilt_sdk_cloudengine as cloudengine;
 use crate::output::{
     FipRow, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow,
     SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
-    format_port_tree, format_router_tree, format_table,
+    VipRowLong, format_port_tree, format_router_tree, format_table,
 };
 
 pub async fn list_networks(
@@ -390,27 +390,79 @@ pub async fn list_vips(
     client.list_vips().await
 }
 
-pub fn format_vip_rows(vips: &[VirtualIps]) -> String {
-    let rows: Vec<VipRow> = vips
-        .iter()
-        .map(|v| VipRow {
-            id: v.id.to_string(),
-            name: v.name.clone(),
-            status: v.status.clone(),
-            floating_ip: v
-                .floating_ip
-                .as_ref()
-                .map(|f| f.ip_address.clone())
-                .unwrap_or_else(|| "-".to_string()),
-            fixed_ip: v
-                .fixed_ips
-                .first()
-                .map(|ip| ip.ip_address.clone())
-                .unwrap_or_else(|| "-".to_string()),
-            address_mode: v.address_mode.clone(),
-        })
-        .collect();
-    format_table(&rows)
+pub fn format_vip_rows(vips: &[VirtualIps], long: bool) -> String {
+    if long {
+        let rows: Vec<VipRowLong> = vips
+            .iter()
+            .map(|v| {
+                let created = v
+                    .created_time
+                    .as_ref()
+                    .and_then(|t| t.split('T').next())
+                    .unwrap_or("-")
+                    .to_string();
+
+                let floating_ip = v
+                    .floating_ip
+                    .as_ref()
+                    .map(|f| format!("{} ({} Mbps)", f.ip_address, f.bandwidth))
+                    .unwrap_or_else(|| "-".to_string());
+
+                let fixed_ip = v
+                    .fixed_ips
+                    .first()
+                    .map(|ip| ip.ip_address.clone())
+                    .unwrap_or_else(|| "-".to_string());
+
+                VipRowLong {
+                    id: format!(
+                        "{}\n└── subnet: {} ({})\n└── network: {} ({})\n└── region: {} ({})",
+                        v.id.to_string(),
+                        v.subnet_name.clone().unwrap_or_else(|| "-".to_string()),
+                        v.subnet_id.clone().unwrap_or_else(|| "-".to_string()),
+                        v.network_name.clone().unwrap_or_else(|| "-".to_string()),
+                        v.network_id.clone().unwrap_or_else(|| "-".to_string()),
+                        v.region_name.clone().unwrap_or_else(|| "-".to_string()),
+                        v.region_id.clone().unwrap_or_else(|| "-".to_string())
+                    ),
+                    name: v.name.clone(),
+                    status: v.status.clone(),
+                    mac_address: v.mac_address.clone(),
+                    floating_ip,
+                    fixed_ip,
+                    l2_enabled: if v.l2_enabled {
+                        "enabled".to_string()
+                    } else {
+                        "disabled".to_string()
+                    },
+                    address_mode: v.address_mode.clone(),
+                    created,
+                }
+            })
+            .collect();
+        format_table(&rows)
+    } else {
+        let rows: Vec<VipRow> = vips
+            .iter()
+            .map(|v| VipRow {
+                id: v.id.to_string(),
+                name: v.name.clone(),
+                status: v.status.clone(),
+                floating_ip: v
+                    .floating_ip
+                    .as_ref()
+                    .map(|f| f.ip_address.clone())
+                    .unwrap_or_else(|| "-".to_string()),
+                fixed_ip: v
+                    .fixed_ips
+                    .first()
+                    .map(|ip| ip.ip_address.clone())
+                    .unwrap_or_else(|| "-".to_string()),
+                address_mode: v.address_mode.clone(),
+            })
+            .collect();
+        format_table(&rows)
+    }
 }
 
 pub async fn list_floating_ips(
