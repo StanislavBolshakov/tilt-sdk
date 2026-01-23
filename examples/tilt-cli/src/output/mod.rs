@@ -1,4 +1,5 @@
 pub mod common;
+pub mod compute;
 pub mod network_tree;
 pub mod router_tree;
 pub mod rows;
@@ -10,6 +11,10 @@ pub use common::format_count;
 pub use common::format_date;
 pub use common::format_opt;
 pub use common::format_opt_ref;
+pub use compute::{
+    FlavorsRow, ImageRow, ImageRowLong, ImageShowRow, PlacementRow, RegionRow, ServersRow,
+    ServersRowLong, TaskRow, TaskRowDetail,
+};
 pub use network_tree::format_port_tree;
 pub use router_tree::format_router_tree;
 pub use rows::ToStringRow;
