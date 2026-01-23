@@ -5,7 +5,7 @@ use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::{
     FlavorsRow, ImageRow, ImageRowLong, ImageShowRow, PlacementRow, RegionRow, ServersRow,
-    ServersRowLong, TaskRow, TaskRowDetail, format_table,
+    ServersRowLong, TaskRow, TaskRowDetail, format_bytes, format_date, format_opt, format_opt_ref, format_table,
 };
 
 pub async fn list_servers(
@@ -86,14 +86,11 @@ pub fn format_servers_rows(instances: &[Instances], long: bool) -> String {
                     id: i.id.to_string(),
                     name: i.name.clone(),
                     status: format!("{:?}", i.status),
-                    flavor: i.flavor_name.clone().unwrap_or_else(|| "-".to_string()),
-                    image: i.image_name.clone().unwrap_or_else(|| "-".to_string()),
+                    flavor: format_opt_ref(&i.flavor_name),
+                    image: format_opt_ref(&i.image_name),
                     ip,
-                    availability_zone: i
-                        .availability_zone
-                        .clone()
-                        .unwrap_or_else(|| "-".to_string()),
-                    created_at: i.created_row_dt[..10].to_string(),
+                    availability_zone: format_opt_ref(&i.availability_zone),
+                    created_at: format_date(&i.created_row_dt),
                 }
             })
             .collect();
@@ -105,10 +102,7 @@ pub fn format_servers_rows(instances: &[Instances], long: bool) -> String {
                 id: i.id.to_string(),
                 name: i.name.clone(),
                 status: format!("{:?}", i.status),
-                availability_zone: i
-                    .availability_zone
-                    .clone()
-                    .unwrap_or_else(|| "-".to_string()),
+                availability_zone: format_opt_ref(&i.availability_zone),
             })
             .collect();
         format_table(&rows)
@@ -134,20 +128,17 @@ pub fn format_image_rows(images: &[Images], long: bool) -> String {
         let rows: Vec<ImageRowLong> = images
             .iter()
             .map(|i| {
-                let size_gb = format!("{:.2}", i.size_bytes as f64 / 1_000_000_000.0);
+                let size_gb = format_bytes(i.size_bytes);
                 let created_at = i.created_at.format("%Y-%m-%d %H:%M:%S").to_string();
-                let os_distro = i.os_distro.clone().unwrap_or_else(|| "-".to_string());
-                let os_version = i.os_version.clone().unwrap_or_else(|| "-".to_string());
-                let visibility = i.visibility.clone().unwrap_or_else(|| "-".to_string());
                 ImageRowLong {
                     id: i.id.to_string(),
                     name: i.name.clone(),
                     size_gb,
                     status: format!("{:?}", i.status),
                     disk_format: i.disk_format.clone(),
-                    os_distro,
-                    os_version,
-                    visibility,
+                    os_distro: format_opt_ref(&i.os_distro),
+                    os_version: format_opt_ref(&i.os_version),
+                    visibility: format_opt_ref(&i.visibility),
                     created_at,
                 }
             })
@@ -157,7 +148,7 @@ pub fn format_image_rows(images: &[Images], long: bool) -> String {
         let rows: Vec<ImageRow> = images
             .iter()
             .map(|i| {
-                let size_gb = format!("{:.2}", i.size_bytes as f64 / 1_000_000_000.0);
+                let size_gb = format_bytes(i.size_bytes);
                 let created = i.created_at.format("%Y-%m-%d").to_string();
                 ImageRow {
                     id: i.id.to_string(),
@@ -173,7 +164,7 @@ pub fn format_image_rows(images: &[Images], long: bool) -> String {
 }
 
 pub fn format_image_show_row(image: &Images) -> String {
-    let size_gb = format!("{:.2}", image.size_bytes as f64 / 1_000_000_000.0);
+    let size_gb = format_bytes(image.size_bytes);
     let created_at = image.created_at.format("%Y-%m-%d %H:%M:%S").to_string();
     let updated_at = image
         .updated_at
@@ -186,13 +177,10 @@ pub fn format_image_show_row(image: &Images) -> String {
         size_gb,
         status: format!("{:?}", image.status),
         disk_format: image.disk_format.clone(),
-        os_distro: image.os_distro.clone().unwrap_or_else(|| "-".to_string()),
-        os_version: image.os_version.clone().unwrap_or_else(|| "-".to_string()),
-        visibility: image.visibility.clone().unwrap_or_else(|| "-".to_string()),
-        availability_zone: image
-            .availability_zone
-            .clone()
-            .unwrap_or_else(|| "-".to_string()),
+        os_distro: format_opt_ref(&image.os_distro),
+        os_version: format_opt_ref(&image.os_version),
+        visibility: format_opt_ref(&image.visibility),
+        availability_zone: format_opt_ref(&image.availability_zone),
         created_at,
         updated_at,
     };
@@ -205,7 +193,7 @@ pub fn format_region_rows(regions: &[Regions]) -> String {
         .map(|r| RegionRow {
             id: r.id.clone(),
             name: r.name.clone(),
-            description: r.description.clone().unwrap_or_else(|| "-".to_string()),
+            description: format_opt_ref(&r.description),
         })
         .collect();
     format_table(&rows)
@@ -220,7 +208,7 @@ pub fn format_task_rows(tasks: &[Tasks], long: bool) -> String {
                     .duration_seconds
                     .map(|d| format!("{}s", d))
                     .unwrap_or_else(|| "-".to_string());
-                let error = t.error.clone().unwrap_or_else(|| "-".to_string());
+                let error = format_opt(t.error.clone());
                 TaskRowDetail {
                     id: t.id.to_string(),
                     object_type: t.object_type.clone(),
@@ -269,11 +257,8 @@ pub fn format_placement_rows(policies: &[PlacementPolicy], _long: bool) -> Strin
         .map(|p| PlacementRow {
             id: p.id.to_string(),
             name: p.name.clone(),
-            policy_type: p.policy_type.clone().unwrap_or_else(|| "-".to_string()),
-            availability_zone: p
-                .availability_zone
-                .clone()
-                .unwrap_or_else(|| "-".to_string()),
+            policy_type: format_opt_ref(&p.policy_type),
+            availability_zone: format_opt_ref(&p.availability_zone),
         })
         .collect();
     format_table(&rows)

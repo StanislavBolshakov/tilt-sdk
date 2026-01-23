@@ -2,7 +2,7 @@ use cloudengine::{ComputeError, Service, Snapshots, Volumes};
 use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::{
-    BackupRow, BackupRowLong, SnapshotRow, VolumeRow, VolumeRowLong, VolumeShowRow, format_table,
+    BackupRow, BackupRowLong, SnapshotRow, VolumeRow, VolumeRowLong, VolumeShowRow, format_date, format_opt, format_opt_ref, format_table,
 };
 use cloudengine::models::Backups;
 
@@ -45,21 +45,15 @@ pub fn format_volume_rows(volumes: &[Volumes], long: bool) -> String {
                 name: v.name.clone(),
                 size: format!("{} gb", v.size),
                 status: format!("{:?}", v.status),
-                az: v
-                    .availability_zone
-                    .clone()
-                    .unwrap_or_else(|| "-".to_string()),
+                az: format_opt_ref(&v.availability_zone),
                 attached_to: v
                     .attached_server_id
                     .map(|id| id.to_string())
                     .unwrap_or_else(|| "-".to_string()),
-                volume_type: v
-                    .volume_type_name
-                    .clone()
-                    .unwrap_or_else(|| "-".to_string()),
+                volume_type: format_opt_ref(&v.volume_type_name),
                 bootable: if v.bootable { "yes" } else { "no" }.to_string(),
-                device: v.device.clone().unwrap_or_else(|| "-".to_string()),
-                created_at: v.created_at[..10].to_string(),
+                device: format_opt_ref(&v.device),
+                created_at: format_date(&v.created_at),
             })
             .collect();
         format_table(&rows)
@@ -71,10 +65,7 @@ pub fn format_volume_rows(volumes: &[Volumes], long: bool) -> String {
                 name: v.name.clone(),
                 size: format!("{} gb", v.size),
                 status: format!("{:?}", v.status),
-                az: v
-                    .availability_zone
-                    .clone()
-                    .unwrap_or_else(|| "-".to_string()),
+                az: format_opt_ref(&v.availability_zone),
             })
             .collect();
         format_table(&rows)
@@ -87,22 +78,16 @@ pub fn format_volume_show_row(volume: &Volumes) -> String {
         name: volume.name.clone(),
         size: format!("{} gb", volume.size),
         status: format!("{:?}", volume.status),
-        volume_type: volume
-            .volume_type_name
-            .clone()
-            .unwrap_or_else(|| "-".to_string()),
-        az: volume
-            .availability_zone
-            .clone()
-            .unwrap_or_else(|| "-".to_string()),
+        volume_type: format_opt_ref(&volume.volume_type_name),
+        az: format_opt_ref(&volume.availability_zone),
         bootable: if volume.bootable { "yes" } else { "no" }.to_string(),
         attached_server_id: volume
             .attached_server_id
             .map(|id| id.to_string())
             .unwrap_or_else(|| "-".to_string()),
-        device: volume.device.clone().unwrap_or_else(|| "-".to_string()),
-        created_at: volume.created_at.clone(),
-        updated_at: volume.updated_at.clone(),
+        device: format_opt_ref(&volume.device),
+        created_at: format_date(&volume.created_at),
+        updated_at: format_date(&volume.updated_at),
     };
     format_table(&[row])
 }
@@ -115,12 +100,8 @@ pub fn format_snapshot_rows(snapshots: &[Snapshots]) -> String {
             name: s.name.clone(),
             size: format!("{} GB", s.size),
             status: s.status.clone(),
-            volume: s
-                .volume_name
-                .clone()
-                .or(s.volume_type_name.clone())
-                .unwrap_or_else(|| "-".to_string()),
-            created: s.created_at.split('T').next().unwrap_or("-").to_string(),
+            volume: format_opt(s.volume_name.clone().or(s.volume_type_name.clone())),
+            created: format_date(&s.created_at),
         })
         .collect();
     format_table(&rows)
@@ -144,14 +125,11 @@ pub fn format_backup_rows(backups: &[Backups], long: bool) -> String {
                 type_: b.backup_type.clone(),
                 state: b.state.clone(),
                 order_id: b.order_id.to_string(),
-                last_backup: b
-                    .last_backup_time
-                    .clone()
-                    .unwrap_or_else(|| "-".to_string()),
+                last_backup: format_opt(b.last_backup_time.clone()),
                 size_gb: format!("{:.2}", b.size_gb),
                 availability_zone: b.availability_zone_name.clone(),
                 provider: b.provider.clone(),
-                created: b.created_time.split('T').next().unwrap_or("-").to_string(),
+                created: format_date(&b.created_time),
             })
             .collect();
         format_table(&rows)
@@ -163,10 +141,7 @@ pub fn format_backup_rows(backups: &[Backups], long: bool) -> String {
                 name: b.source_object_name.clone(),
                 type_: b.backup_type.clone(),
                 state: b.state.clone(),
-                last_backup: b
-                    .last_backup_time
-                    .clone()
-                    .unwrap_or_else(|| "-".to_string()),
+                last_backup: format_opt(b.last_backup_time.clone()),
                 size_gb: format!("{:.2}", b.size_gb),
                 availability_zone: b.availability_zone_name.clone(),
             })

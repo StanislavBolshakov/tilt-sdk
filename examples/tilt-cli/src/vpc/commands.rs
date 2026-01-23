@@ -6,7 +6,7 @@ use tilt_sdk_cloudengine as cloudengine;
 use crate::output::{
     FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow,
     SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
-    VipRowLong, format_port_tree, format_router_tree, format_table,
+    VipRowLong, format_date, format_opt_ref, format_port_tree, format_router_tree, format_table,
 };
 
 pub async fn list_networks(
@@ -75,21 +75,16 @@ pub fn format_network_rows(networks: &[Networks], long: bool) -> String {
                     )
                 }).unwrap_or_else(|| String::from("disabled"));
 
-                let shared = n.shared_from.clone().unwrap_or_else(|| String::from("-"));
+                let shared = format_opt_ref(&n.shared_from);
 
-                let created = n
-                    .create_time
-                    .as_ref()
-                    .and_then(|t| t.split('T').next())
-                    .unwrap_or("-")
-                    .to_string();
+                let created = n.create_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string());
 
                 NetworkRowLong {
                     id: n.id.to_string(),
                     name: n.name.clone(),
                     status: n.status.clone(),
                     dhcp,
-                    description: n.description.clone().unwrap_or_else(|| String::from("-")),
+                    description: format_opt_ref(&n.description),
                     shared,
                     created,
                 }
@@ -103,13 +98,8 @@ pub fn format_network_rows(networks: &[Networks], long: bool) -> String {
                 id: n.id.to_string(),
                 name: n.name.clone(),
                 status: n.status.clone(),
-                description: n.description.clone().unwrap_or_else(|| "-".to_string()),
-                created: n
-                    .create_time
-                    .as_ref()
-                    .and_then(|t| t.split('T').next())
-                    .unwrap_or("-")
-                    .to_string(),
+                description: format_opt_ref(&n.description),
+                created: n.create_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string()),
             })
             .collect();
         format_table(&rows)
@@ -152,21 +142,21 @@ pub fn format_subnet_rows(subnets: &[Subnets], long: bool) -> String {
                 SubnetRowLong {
                     id: format!(
                         "{}\n└── network_id: {}\n└── region_id: {}",
-                        s.id.to_string(),
-                        s.network_id.to_string(),
+                        s.id,
+                        s.network_id,
                         s.region_id.clone()
                     ),
                     name: s.name.clone(),
                     ipam: format!(
                         "CIDR: {}\nGateway: {}",
                         s.cidr,
-                        s.gateway_ip.clone().unwrap_or_else(|| "-".to_string())
+                        format_opt_ref(&s.gateway_ip)
                     ),
                     network: s.network_name.clone(),
                     region: s.region_name.clone(),
                     status: s.status.clone(),
                     dhcp,
-                    description: s.description.clone().unwrap_or_else(|| "-".to_string()),
+                    description: format_opt_ref(&s.description),
                     shared,
                 }
             })
@@ -181,7 +171,7 @@ pub fn format_subnet_rows(subnets: &[Subnets], long: bool) -> String {
                 ipam: format!(
                     "{} / {}",
                     s.cidr,
-                    s.gateway_ip.clone().unwrap_or_else(|| "-".to_string())
+                    format_opt_ref(&s.gateway_ip)
                 ),
                 network: s.network_name.clone(),
                 status: s.status.clone(),
@@ -204,7 +194,7 @@ pub fn format_port_rows(items: &[NetworkItem], long: bool, filter: PortFilter) -
                     NetworkItem::Nic(nic) => Some(NicRow {
                         id: nic.id.to_string(),
                         status: nic.state.clone(),
-                        ip: nic.ip_address.clone().unwrap_or_else(|| "-".to_string()),
+                        ip: format_opt_ref(&nic.ip_address),
                         network: nic.network_name.clone(),
                         security_groups: if nic.security_group_names.is_empty() {
                             "-".to_string()
@@ -228,8 +218,8 @@ pub fn format_port_rows(items: &[NetworkItem], long: bool, filter: PortFilter) -
                         status: inst.status.clone(),
                         flavor: inst.flavor_name.clone(),
                         image: inst.image_name.clone(),
-                        ip: inst.ip_address.clone().unwrap_or_else(|| "-".to_string()),
-                        network: inst.network_name.clone().unwrap_or_else(|| "-".to_string()),
+                        ip: format_opt_ref(&inst.ip_address),
+                        network: format_opt_ref(&inst.network_name),
                         availability_zone: inst.availability_zone.clone(),
                     }),
                     NetworkItem::Nic(_) => None,
@@ -252,14 +242,9 @@ pub fn format_security_group_rows(groups: &[SecurityGroups], long: bool) -> Stri
                 id: g.id.to_string(),
                 name: g.name.clone(),
                 status: g.status.clone(),
-                description: g.description.clone().unwrap_or_else(|| "-".to_string()),
-                created: g.create_time.split('T').next().unwrap_or("-").to_string(),
-                updated: g
-                    .update_time
-                    .as_ref()
-                    .map(|t| t.split('T').next().unwrap_or("-"))
-                    .unwrap_or("-")
-                    .to_string(),
+                description: format_opt_ref(&g.description),
+                created: format_date(&g.create_time),
+                updated: g.update_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string()),
             })
             .collect();
         format_table(&rows)
@@ -270,8 +255,8 @@ pub fn format_security_group_rows(groups: &[SecurityGroups], long: bool) -> Stri
                 id: g.id.to_string(),
                 name: g.name.clone(),
                 status: g.status.clone(),
-                description: g.description.clone().unwrap_or_else(|| "-".to_string()),
-                created: g.create_time.split('T').next().unwrap_or("-").to_string(),
+                description: format_opt_ref(&g.description),
+                created: format_date(&g.create_time),
             })
             .collect();
         format_table(&rows)
@@ -326,21 +311,21 @@ pub async fn list_route_tables(
 pub fn format_route_table_rows(tables: &[RouteTables]) -> String {
     let rows: Vec<RouteTableRow> = tables
         .iter()
-        .map(|t| RouteTableRow {
-            id: t.id.to_string(),
-            name: t.name.clone(),
-            status: t.status.to_string(),
-            routes: t.routes.len().to_string(),
-            networks: t
-                .networks
-                .iter()
-                .map(|n| n.name.clone())
-                .collect::<Vec<_>>()
-                .join(", "),
-            region: t.region.name.clone(),
-            created: t.create_date.split('T').next().unwrap_or("-").to_string(),
-        })
-        .collect();
+            .map(|t| RouteTableRow {
+                id: t.id.to_string(),
+                name: t.name.clone(),
+                status: t.status.to_string(),
+                routes: t.routes.len().to_string(),
+                networks: t
+                    .networks
+                    .iter()
+                    .map(|n| n.name.clone())
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                region: t.region.name.clone(),
+                created: format_date(&t.create_date),
+            })
+            .collect();
     format_table(&rows)
 }
 
@@ -367,10 +352,7 @@ pub fn format_security_group_rules(rules: &[SecurityGroupRule]) -> String {
                 (Some(min), Some(max)) => format!("{}-{}", min, max),
                 _ => "any".to_string(),
             };
-            let remote_ip = r
-                .remote_ip_prefix
-                .clone()
-                .unwrap_or_else(|| "-".to_string());
+            let remote_ip = format_opt_ref(&r.remote_ip_prefix);
             SecurityGroupRuleRow {
                 id: r.id.to_string(),
                 direction: r.direction.clone(),
@@ -395,12 +377,7 @@ pub fn format_vip_rows(vips: &[VirtualIps], long: bool) -> String {
         let rows: Vec<VipRowLong> = vips
             .iter()
             .map(|v| {
-                let created = v
-                    .created_time
-                    .as_ref()
-                    .and_then(|t| t.split('T').next())
-                    .unwrap_or("-")
-                    .to_string();
+                let created = v.created_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string());
 
                 let floating_ip = v
                     .floating_ip
@@ -417,13 +394,13 @@ pub fn format_vip_rows(vips: &[VirtualIps], long: bool) -> String {
                 VipRowLong {
                     id: format!(
                         "{}\n└── subnet: {} ({})\n└── network: {} ({})\n└── region: {} ({})",
-                        v.id.to_string(),
-                        v.subnet_name.clone().unwrap_or_else(|| "-".to_string()),
-                        v.subnet_id.clone().unwrap_or_else(|| "-".to_string()),
-                        v.network_name.clone().unwrap_or_else(|| "-".to_string()),
-                        v.network_id.clone().unwrap_or_else(|| "-".to_string()),
-                        v.region_name.clone().unwrap_or_else(|| "-".to_string()),
-                        v.region_id.clone().unwrap_or_else(|| "-".to_string())
+                        v.id,
+                        format_opt_ref(&v.subnet_name),
+                        format_opt_ref(&v.subnet_id),
+                        format_opt_ref(&v.network_name),
+                        format_opt_ref(&v.network_id),
+                        format_opt_ref(&v.region_name),
+                        format_opt_ref(&v.region_id)
                     ),
                     name: v.name.clone(),
                     status: v.status.clone(),
@@ -476,19 +453,14 @@ pub fn format_fip_rows(fips: &[FloatingIps], long: bool) -> String {
         let rows: Vec<FipRowLong> = fips
             .iter()
             .map(|f| {
-                let created = f
-                    .created_time
-                    .as_ref()
-                    .and_then(|t| t.split('T').next())
-                    .unwrap_or("-")
-                    .to_string();
+                let created = f.created_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string());
 
                 let parent = f
                     .parent_item_id
                     .as_ref()
                     .map(|pid| {
-                        let ptype = f.parent_item_type.clone().unwrap_or_else(|| "unknown".to_string());
-                        format!("{} ({})", ptype, pid.to_string())
+                        let ptype = format_opt_ref(&f.parent_item_type);
+                        format!("{} ({})", ptype, pid)
                     })
                     .unwrap_or_else(|| "-".to_string());
 
@@ -511,12 +483,7 @@ pub fn format_fip_rows(fips: &[FloatingIps], long: bool) -> String {
                 ip_address: f.floating_ip_address.clone(),
                 bandwidth: format!("{} Mbps", f.bandwidth),
                 status: f.status.clone(),
-                created: f
-                    .created_time
-                    .as_ref()
-                    .and_then(|t| t.split('T').next())
-                    .unwrap_or("-")
-                    .to_string(),
+                created: f.created_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string()),
             })
             .collect();
         format_table(&rows)

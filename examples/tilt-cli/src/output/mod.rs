@@ -1,5 +1,11 @@
+pub mod common;
 pub mod rows;
 
+pub use common::format_bytes;
+pub use common::format_count;
+pub use common::format_date;
+pub use common::format_opt;
+pub use common::format_opt_ref;
 pub use rows::*;
 
 use comfy_table::Table;
@@ -24,14 +30,6 @@ pub fn format_table<T: ToStringRow>(rows: &[T]) -> String {
     table.to_string()
 }
 
-pub fn format_count(count: usize, singular: &str, plural: &str) -> String {
-    if count == 1 {
-        format!("(1 {})", singular)
-    } else {
-        format!("({} {})", count, plural)
-    }
-}
-
 fn format_instance_tree_table(
     inst: &cloudengine::models::InstanceItem,
     nics: &[cloudengine::models::NicPort],
@@ -39,7 +37,7 @@ fn format_instance_tree_table(
     let mut rows = Vec::new();
 
     let instance_id = inst.id.to_string();
-    let network = inst.network_name.clone().unwrap_or_else(|| "-".to_string());
+    let network = format_opt_ref(&inst.network_name);
 
     if nics.is_empty() {
         rows.push(rows::PortTreeRow {
@@ -87,7 +85,7 @@ fn format_instance_tree_table(
 }
 
 fn format_standalone_nic_row(nic: &cloudengine::models::NicPort) -> rows::PortTreeRow {
-    let nic_ip = nic.ip_address.clone().unwrap_or_else(|| "-".to_string());
+    let nic_ip = format_opt_ref(&nic.ip_address);
     let sgs = if nic.security_group_names.is_empty() {
         String::new()
     } else {
@@ -183,12 +181,7 @@ fn format_router_tree_table(router: &cloudengine::models::Routers) -> Vec<rows::
         bandwidth: format!("{} Mbps", router.bandwidth),
         ip: router.ip_address.clone(),
         attached_nics,
-        created_at: router
-            .created_at
-            .split('T')
-            .next()
-            .unwrap_or("-")
-            .to_string(),
+        created_at: format_date(&router.created_at),
     }]
 }
 
