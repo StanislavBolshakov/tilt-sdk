@@ -4,7 +4,7 @@ use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::format_opt_ref;
 use crate::output::format_table;
-use crate::output::rows::PortTreeRow;
+use crate::output::vpc::PortTreeRow;
 
 fn format_instance_tree_table(
     inst: &cloudengine::models::InstanceItem,

@@ -1,6 +1,10 @@
+use comfy_table::Cell;
 use comfy_table::Table;
 
-use crate::output::rows::ToStringRow;
+pub trait ToStringRow {
+    fn to_headers(&self) -> Vec<String>;
+    fn to_row(&self) -> Vec<Cell>;
+}
 
 pub fn format_table<T: ToStringRow>(rows: &[T]) -> String {
     if rows.is_empty() {

@@ -2,7 +2,7 @@ use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::format_date;
 use crate::output::format_table;
-use crate::output::rows::RouterRowLong;
+use crate::output::vpc::RouterRowLong;
 
 fn format_router_tree_table(router: &cloudengine::models::Routers) -> Vec<RouterRowLong> {
     let router_id = router.id.to_string();
