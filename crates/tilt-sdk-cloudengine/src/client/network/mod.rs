@@ -79,6 +79,17 @@ impl<'a> NetworkClient<'a> {
         .await
     }
 
+    async fn delete(&self, path: &str) -> Result<serde_json::Value> {
+        let span = info_span!("network_delete", path);
+        async move {
+            debug!(path, "Deleting resource");
+            self.client.http().delete::<serde_json::Value>(&path).await
+                .map_err(|e| ComputeError::from_sdk_error(e, VPC_SERVICE, Some(path)))
+        }
+        .instrument(span)
+        .await
+    }
+
     pub async fn list_networks(&self) -> Result<Vec<Networks>> {
         let path = format!("/vpc/api/v1/projects/{}/networks", self.client.project());
         let response: NetworksResponse = self.get_with_query(&path, &[]).await?;
@@ -179,6 +190,15 @@ impl<'a> NetworkClient<'a> {
 
         let response: SubnetsResponse = self.get_with_query(&path, &query).await?;
         Ok(response.into_iter().map(Into::into).collect())
+    }
+
+    pub async fn delete_subnet(&self, subnet_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/subnets/{}",
+            self.client.project(),
+            subnet_id
+        );
+        self.delete(&path).await
     }
 
     pub async fn list_ports(

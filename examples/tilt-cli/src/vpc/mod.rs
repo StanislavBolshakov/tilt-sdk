@@ -29,6 +29,11 @@ pub enum SubnetAction {
         #[command(flatten)]
         list_opts: SubnetListOpts,
     },
+    #[command(about = "Delete a subnet")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: SubnetDeleteOpts,
+    },
 }
 
 #[derive(Debug, Clone, Args)]
@@ -39,6 +44,13 @@ pub struct SubnetListOpts {
     pub network_id: Option<String>,
     #[arg(long, help = "Show detailed info")]
     pub long: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct SubnetDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub subnet_id: String,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -257,6 +269,24 @@ pub async fn handle_subnet_action(
                         }
                         OutputFormat::Json => {
                             println!("{}", serde_json::to_string_pretty(&subnets).unwrap());
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SubnetAction::Delete { delete_opts } => {
+            match commands::delete_subnet(compute, &delete_opts.subnet_id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Subnet {} deleted successfully", delete_opts.subnet_id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
                         }
                     }
                 }
