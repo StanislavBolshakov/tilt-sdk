@@ -36,6 +36,20 @@ pub async fn delete_subnet(
     client.delete_subnet(id).await
 }
 
+pub async fn delete_network(
+    client: &cloudengine::ComputeClient<'_>,
+    network_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = network_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid network ID: {}", network_id),
+        )
+    })?;
+    client.delete_network(id).await
+}
+
 pub async fn list_ports(
     client: &cloudengine::ComputeClient<'_>,
     limit: Option<u32>,

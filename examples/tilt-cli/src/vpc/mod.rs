@@ -12,6 +12,11 @@ pub enum NetworkAction {
         #[command(flatten)]
         list_opts: NetworkListOpts,
     },
+    #[command(about = "Delete a network")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: NetworkDeleteOpts,
+    },
 }
 
 #[derive(Debug, Clone, Args)]
@@ -20,6 +25,13 @@ pub struct NetworkListOpts {
     pub format: Option<OutputFormat>,
     #[arg(long, help = "Show detailed info")]
     pub long: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct NetworkDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub network_id: String,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -246,6 +258,24 @@ pub async fn handle_network_action(
                 std::process::exit(1);
             }
         },
+        NetworkAction::Delete { delete_opts } => {
+            match commands::delete_network(compute, &delete_opts.network_id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Network {} deleted successfully", delete_opts.network_id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }
 

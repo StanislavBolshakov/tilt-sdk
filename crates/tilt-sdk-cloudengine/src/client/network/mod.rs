@@ -201,6 +201,15 @@ impl<'a> NetworkClient<'a> {
         self.delete(&path).await
     }
 
+    pub async fn delete_network(&self, network_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/networks/{}",
+            self.client.project(),
+            network_id
+        );
+        self.delete(&path).await
+    }
+
     pub async fn list_ports(
         &self,
         limit: Option<u32>,

@@ -242,6 +242,10 @@ impl<'a> ComputeClient<'a> {
         self.network.delete_subnet(subnet_id).await
     }
 
+    pub async fn delete_network(&self, network_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_network(network_id).await
+    }
+
     pub async fn list_ports(
         &self,
         limit: Option<u32>,
