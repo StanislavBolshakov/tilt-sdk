@@ -89,6 +89,8 @@ impl ReqwestClient {
 
         let builder = self.inner.request(method.clone(), url);
 
+        let builder = builder.timeout(self.timeout);
+
         if let Some(token) = &self.token {
             builder.bearer_auth(token)
         } else {
@@ -156,7 +158,7 @@ impl ReqwestClient {
                                 serde_json::from_value(serde_json::Value::Null);
                             return val.map_err(SdkError::Json);
                         }
-                        let text = response.text().await.map_err(SdkError::from)?;
+                        let text = response.text().await.map_err(|e| self.map_reqwest_error(e))?;
                         debug!("Server response ({} bytes): {}", text.len(), text);
                         let value: T = serde_json::from_str(&text).map_err(SdkError::Json)?;
                         return Ok(value);
@@ -173,7 +175,7 @@ impl ReqwestClient {
                     debug!("Server error response: {:?}", body);
                     self.handle_error::<T>(status, &body, request_id)
                 }
-                Err(e) => Err(SdkError::from(e)),
+                Err(e) => Err(self.map_reqwest_error(e)),
             }
         }
         .instrument(span)
@@ -226,6 +228,28 @@ impl ReqwestClient {
         }
     }
 
+    fn map_reqwest_error(&self, e: reqwest::Error) -> SdkError {
+        if e.is_timeout() {
+            return SdkError::Timeout { timeout: self.timeout.as_secs() };
+        }
+        if e.is_status()
+            && let Some(status) = e.status()
+        {
+            return SdkError::Http(HttpError {
+                status,
+                request_id: None,
+                body: None,
+                hints: Vec::new(),
+            });
+        }
+        SdkError::Http(HttpError {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            request_id: None,
+            body: None,
+            hints: vec!["An unexpected HTTP error occurred".to_string()],
+        })
+    }
+
     fn extract_hints(status: StatusCode, body: &Option<String>) -> Vec<String> {
         let mut hints = Vec::new();
 
@@ -254,29 +278,5 @@ impl ReqwestClient {
         }
 
         hints
-    }
-}
-
-impl From<reqwest::Error> for SdkError {
-    fn from(e: reqwest::Error) -> Self {
-        if e.is_timeout() {
-            return SdkError::Timeout { timeout: 30 };
-        }
-        if e.is_status()
-            && let Some(status) = e.status()
-        {
-            return SdkError::Http(HttpError {
-                status,
-                request_id: None,
-                body: None,
-                hints: Vec::new(),
-            });
-        }
-        SdkError::Http(HttpError {
-            status: StatusCode::INTERNAL_SERVER_ERROR,
-            request_id: None,
-            body: None,
-            hints: vec!["An unexpected HTTP error occurred".to_string()],
-        })
     }
 }

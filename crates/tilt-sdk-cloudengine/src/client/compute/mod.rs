@@ -392,14 +392,33 @@ impl<'a> ComputeClient<'a> {
             "/order-service/api/v1/projects/{}/compute/backup_containers",
             self.client.project()
         );
-        let query = &[
-            ("with_children", "false"),
-            ("with_all_children", "false"),
-            ("page", &page.unwrap_or(1).to_string()),
-            ("per_page", &limit.unwrap_or(25).to_string()),
-            ("include", "total_count"),
-        ];
-        let response: BackupsResponse = self.get_with_query(&path, query).await?;
-        Ok(response.list.into_iter().map(Into::into).collect())
+
+        let this = &self;
+        paginate(
+            limit,
+            page,
+            Service::OrderService,
+            &path,
+            |page: u32, limit: u32| {
+                let path = path.clone();
+                async move {
+                    let response: BackupsResponse = this
+                        .get_with_query(
+                            &path,
+                            &[
+                                ("with_children", "false"),
+                                ("with_all_children", "false"),
+                                ("include", "total_count"),
+                                ("page", &page.to_string()),
+                                ("per_page", &limit.to_string()),
+                            ],
+                        )
+                        .await?;
+                    let items: Vec<Backups> = response.list.into_iter().map(Into::into).collect();
+                    Ok((items, response.meta.total_count))
+                }
+            },
+        )
+        .await
     }
 }
