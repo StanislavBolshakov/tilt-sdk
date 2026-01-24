@@ -12,7 +12,6 @@ pub async fn list_servers(
     client: &cloudengine::ComputeClient<'_>,
     limit: Option<u32>,
     page: Option<u32>,
-    _long: bool,
 ) -> Result<Vec<Instances>, ComputeError> {
     client.list_instances(limit, page).await
 }
@@ -251,7 +250,7 @@ pub async fn list_placement_policies(
     client.list_placement_policies().await
 }
 
-pub fn format_placement_rows(policies: &[PlacementPolicy], _long: bool) -> String {
+pub fn format_placement_rows(policies: &[PlacementPolicy]) -> String {
     let rows: Vec<PlacementRow> = policies
         .iter()
         .map(|p| PlacementRow {

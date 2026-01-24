@@ -1,5 +1,7 @@
 use crate::impl_table_row;
+use anyhow::anyhow;
 use cloudengine::models::NetworkItem;
+use std::convert::TryFrom;
 use tilt_sdk_cloudengine as cloudengine;
 
 #[derive(Debug)]
@@ -251,10 +253,12 @@ impl_table_row!(
     availability_zone
 );
 
-impl From<&NetworkItem> for NicRow {
-    fn from(item: &NetworkItem) -> Self {
+impl TryFrom<&NetworkItem> for NicRow {
+    type Error = anyhow::Error;
+
+    fn try_from(item: &NetworkItem) -> Result<Self, Self::Error> {
         match item {
-            NetworkItem::Nic(nic) => NicRow {
+            NetworkItem::Nic(nic) => Ok(NicRow {
                 id: nic.id.to_string(),
                 status: nic.state.clone(),
                 ip: nic.ip_address.clone().unwrap_or_else(|| "-".to_string()),
@@ -265,16 +269,18 @@ impl From<&NetworkItem> for NicRow {
                     nic.security_group_names.join(", ")
                 },
                 state: nic.state.clone(),
-            },
-            NetworkItem::Instance(_) => panic!("Cannot convert Instance to NicRow"),
+            }),
+            NetworkItem::Instance(_) => Err(anyhow!("Cannot convert Instance to NicRow")),
         }
     }
 }
 
-impl From<&NetworkItem> for InstanceRow {
-    fn from(item: &NetworkItem) -> Self {
+impl TryFrom<&NetworkItem> for InstanceRow {
+    type Error = anyhow::Error;
+
+    fn try_from(item: &NetworkItem) -> Result<Self, Self::Error> {
         match item {
-            NetworkItem::Instance(inst) => InstanceRow {
+            NetworkItem::Instance(inst) => Ok(InstanceRow {
                 id: inst.id.to_string(),
                 name: inst.name.clone(),
                 status: inst.status.clone(),
@@ -283,8 +289,8 @@ impl From<&NetworkItem> for InstanceRow {
                 ip: inst.ip_address.clone().unwrap_or_else(|| "-".to_string()),
                 network: inst.network_name.clone().unwrap_or_else(|| "-".to_string()),
                 availability_zone: inst.availability_zone.clone(),
-            },
-            NetworkItem::Nic(_) => panic!("Cannot convert Nic to InstanceRow"),
+            }),
+            NetworkItem::Nic(_) => Err(anyhow!("Cannot convert Nic to InstanceRow")),
         }
     }
 }

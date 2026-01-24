@@ -87,7 +87,7 @@ impl ReqwestClient {
             url
         };
 
-        let builder = self.inner.request(method.clone(), url);
+        let builder = self.inner.request(method, url);
 
         let builder = builder.timeout(self.timeout);
 
@@ -140,7 +140,7 @@ impl ReqwestClient {
     ) -> Result<T, SdkError> {
         let span = info_span!("http_request", method = %method, path = path);
         async move {
-            let builder = self.build_request(method.clone(), path, query);
+            let builder = self.build_request(method, path, query);
 
             let builder = if let Some(body) = body {
                 builder.json(body)

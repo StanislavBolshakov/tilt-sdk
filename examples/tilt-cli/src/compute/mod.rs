@@ -135,7 +135,7 @@ pub async fn handle_server_action(
 ) {
     match action {
         ServerAction::List { list_opts } => {
-            match commands::list_servers(compute, list_opts.limit, list_opts.page, list_opts.long)
+            match commands::list_servers(compute, list_opts.limit, list_opts.page)
                 .await
             {
                 Ok(instances) => {
@@ -310,7 +310,7 @@ pub async fn handle_placement_action(
     match action {
         PlacementAction::List { .. } => match commands::list_placement_policies(compute).await {
             Ok(policies) => {
-                let table = commands::format_placement_rows(&policies, false);
+                let table = commands::format_placement_rows(&policies);
                 match format.unwrap_or(OutputFormat::Table) {
                     OutputFormat::Table => {
                         println!("{}", table);
