@@ -37,7 +37,7 @@ pub use placement_policies::{PlacementPoliciesResponse, PlacementPolicyWrapper};
 pub use ports::{PortWrapper, PortsResponse};
 pub use regions::{RegionWrapper, RegionsResponse};
 pub use route_tables::{RouteTableWrapper, RouteTablesResponse};
-pub use routers::{RouterWrapper, RoutersResponse};
+pub use routers::{NetworkRouterWrapper, NetworkRoutersResponse, RouterWrapper, RoutersResponse};
 pub use security_groups::{
     SecurityGroupRuleWrapper, SecurityGroupRulesResponse, SecurityGroupWrapper,
     SecurityGroupsResponse,

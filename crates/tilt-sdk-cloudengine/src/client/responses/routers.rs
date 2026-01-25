@@ -1,5 +1,7 @@
 use crate::models::common::extensible::LogSchemaWarnings;
-use crate::models::{ListResponse, NestedEntity, RouterNic, RouterStatus, Routers, StatusEnum};
+use crate::models::{
+    ListResponse, NestedEntity, NetworkRouter, RouterNic, RouterStatus, Routers, StatusEnum,
+};
 use serde::Deserialize;
 
 pub type RoutersResponse = ListResponse<RouterWrapper>;
@@ -120,6 +122,42 @@ impl From<RouterWrapper> for Routers {
                     subnet_name: nic.data.config.subnet.as_ref().map(|s| s.name.clone()),
                 })
                 .collect(),
+        }
+    }
+}
+
+pub type NetworkRoutersResponse = ListResponse<NetworkRouterWrapper>;
+
+#[derive(Debug, Clone, Default, Deserialize)]
+#[serde(default)]
+pub struct NetworkRouterWrapper {
+    #[serde(default)]
+    pub id: uuid::Uuid,
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub status: String,
+    #[serde(default)]
+    #[serde(rename = "create_time")]
+    pub create_time: String,
+    #[serde(default)]
+    #[serde(rename = "update_time")]
+    pub update_time: Option<String>,
+    #[serde(default, flatten)]
+    pub _extra: std::collections::HashMap<String, serde_json::Value>,
+}
+
+impl From<NetworkRouterWrapper> for NetworkRouter {
+    fn from(wrapper: NetworkRouterWrapper) -> Self {
+        NetworkRouter {
+            id: wrapper.id,
+            name: wrapper.name,
+            description: wrapper.description.into(),
+            status: wrapper.status,
+            create_time: wrapper.create_time,
+            update_time: wrapper.update_time,
         }
     }
 }

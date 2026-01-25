@@ -52,3 +52,13 @@ pub struct Routers {
     pub created_at: String,
     pub attached_nics: Vec<RouterNic>,
 }
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+pub struct NetworkRouter {
+    pub id: Uuid,
+    pub name: String,
+    pub description: Option<String>,
+    pub status: String,
+    pub create_time: String,
+    pub update_time: Option<String>,
+}

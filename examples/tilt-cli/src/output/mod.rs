@@ -16,9 +16,10 @@ pub use router_tree::format_router_tree;
 pub use storage::{BackupRow, BackupRowLong, SnapshotRow, VolumeRow, VolumeRowLong, VolumeShowRow};
 pub use table::{format_table, ToStringRow};
 pub use vpc::{
-    FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow,
-    RouteTableRow, RouterRow, SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow,
-    SshKeyRow, SubnetRow, SubnetRowLong, VipRow, VipRowLong,
+    FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRouterRow, NetworkRouterRowLong,
+    NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow, SecurityGroupRow,
+    SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
+    VipRowLong,
 };
 
 #[macro_export]

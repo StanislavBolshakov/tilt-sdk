@@ -1,9 +1,9 @@
 use crate::error::{ComputeError, Result, Service};
 use crate::models::{
     AvailabilityZone, Backups, Flavors, FloatingIps, ImageUpload, Images, Instances,
-    NetworkInterface, NetworkItem, Networks, PlacementPolicy, Regions, RouteTables, Routers,
-    SecurityGroupRule, SecurityGroups, Snapshots, SshKeys, Subnets, Tasks, VirtualIps, VolumeType,
-    Volumes,
+    NetworkInterface, NetworkItem, NetworkRouter, Networks, PlacementPolicy, Regions, RouteTables,
+    Routers, SecurityGroupRule, SecurityGroups, Snapshots, SshKeys, Subnets, Tasks, VirtualIps,
+    VolumeType, Volumes,
 };
 use tilt_sdk::Client;
 use uuid::Uuid;
@@ -242,6 +242,22 @@ impl<'a> ComputeClient<'a> {
         self.network.delete_subnet(subnet_id).await
     }
 
+    pub async fn delete_network(&self, network_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_network(network_id).await
+    }
+
+    pub async fn delete_fip(&self, fip_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_fip(fip_id).await
+    }
+
+    pub async fn delete_security_group(&self, security_group_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_security_group(security_group_id).await
+    }
+
+    pub async fn delete_route_table(&self, route_table_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_route_table(route_table_id).await
+    }
+
     pub async fn list_ports(
         &self,
         limit: Option<u32>,
@@ -253,6 +269,30 @@ impl<'a> ComputeClient<'a> {
 
     pub async fn list_routers(&self) -> Result<Vec<Routers>> {
         self.network.list_routers().await
+    }
+
+    pub async fn list_network_routers(
+        &self,
+        limit: Option<u32>,
+        page: Option<u32>,
+    ) -> Result<Vec<NetworkRouter>> {
+        self.network.list_network_routers(limit, page).await
+    }
+
+    pub async fn delete_router(&self, router_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_router(router_id).await
+    }
+
+    pub async fn delete_network_router(&self, router_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_network_router(router_id).await
+    }
+
+    pub async fn delete_vip(&self, vip_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_vip(vip_id).await
+    }
+
+    pub async fn delete_port(&self, port_id: Uuid) -> Result<serde_json::Value> {
+        self.network.delete_port(port_id).await
     }
 
     pub async fn list_route_tables(

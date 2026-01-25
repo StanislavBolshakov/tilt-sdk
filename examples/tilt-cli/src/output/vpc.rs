@@ -335,6 +335,17 @@ pub struct RouterRow {
 impl_table_row!(RouterRow, id, name, status, bandwidth, ip);
 
 #[derive(Debug)]
+pub struct NetworkRouterRow {
+    pub id: String,
+    pub name: String,
+    pub status: String,
+    pub description: String,
+    pub created: String,
+}
+
+impl_table_row!(NetworkRouterRow, id, name, status, description, created);
+
+#[derive(Debug)]
 pub struct RouterRowLong {
     pub id: String,
     pub name: String,
@@ -344,6 +355,26 @@ pub struct RouterRowLong {
     pub attached_nics: String,
     pub created_at: String,
 }
+
+#[derive(Debug)]
+pub struct NetworkRouterRowLong {
+    pub id: String,
+    pub name: String,
+    pub status: String,
+    pub description: String,
+    pub created: String,
+    pub updated: String,
+}
+
+impl_table_row!(
+    NetworkRouterRowLong,
+    id,
+    name,
+    status,
+    description,
+    created,
+    updated
+);
 
 impl_table_row!(
     RouterRowLong,

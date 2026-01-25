@@ -1,11 +1,11 @@
 use cloudengine::client::PortFilter;
-use cloudengine::models::{FloatingIps, NetworkItem, RouteTables, Routers, VirtualIps};
+use cloudengine::models::{FloatingIps, NetworkItem, RouteTables, VirtualIps};
 use cloudengine::{ComputeError, Networks, SecurityGroupRule, SecurityGroups, SshKeys, Subnets};
 use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::{
-    FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow,
-    SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
+    FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, NetworkRouterRow, NetworkRouterRowLong,
+    RouteTableRow, RouterRow, SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
     VipRowLong, format_date, format_opt_ref, format_port_tree, format_router_tree, format_table,
 };
 
@@ -36,6 +36,76 @@ pub async fn delete_subnet(
     client.delete_subnet(id).await
 }
 
+pub async fn delete_network(
+    client: &cloudengine::ComputeClient<'_>,
+    network_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = network_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid network ID: {}", network_id),
+        )
+    })?;
+    client.delete_network(id).await
+}
+
+pub async fn delete_fip(
+    client: &cloudengine::ComputeClient<'_>,
+    fip_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = fip_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid floating IP ID: {}", fip_id),
+        )
+    })?;
+    client.delete_fip(id).await
+}
+
+pub async fn delete_vip(
+    client: &cloudengine::ComputeClient<'_>,
+    vip_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = vip_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid VIP ID: {}", vip_id),
+        )
+    })?;
+    client.delete_vip(id).await
+}
+
+pub async fn delete_security_group(
+    client: &cloudengine::ComputeClient<'_>,
+    security_group_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = security_group_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid security group ID: {}", security_group_id),
+        )
+    })?;
+    client.delete_security_group(id).await
+}
+
+pub async fn delete_route_table(
+    client: &cloudengine::ComputeClient<'_>,
+    route_table_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = route_table_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid route table ID: {}", route_table_id),
+        )
+    })?;
+    client.delete_route_table(id).await
+}
+
 pub async fn list_ports(
     client: &cloudengine::ComputeClient<'_>,
     limit: Option<u32>,
@@ -47,6 +117,20 @@ pub async fn list_ports(
         _ => (limit, page),
     };
     client.list_ports(limit, page, filter).await
+}
+
+pub async fn delete_port(
+    client: &cloudengine::ComputeClient<'_>,
+    port_id: &str,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = port_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid port ID: {}", port_id),
+        )
+    })?;
+    client.delete_port(id).await
 }
 
 pub async fn list_security_groups(
@@ -243,9 +327,9 @@ pub fn format_port_rows(items: &[NetworkItem], long: bool, filter: PortFilter) -
         }
         PortFilter::All => {
             let rows: Vec<NetworkItemRow> = items.iter().map(NetworkItemRow::from).collect();
-            format_table(&rows)
-        }
+        format_table(&rows)
     }
+}
 }
 
 pub fn format_security_group_rows(groups: &[SecurityGroups], long: bool) -> String {
@@ -290,27 +374,100 @@ pub fn format_ssh_key_rows(keys: &[SshKeys]) -> String {
     format_table(&rows)
 }
 
-pub async fn list_routers(
-    client: &cloudengine::ComputeClient<'_>,
-) -> Result<Vec<Routers>, ComputeError> {
-    client.list_routers().await
+pub enum RoutersListResult {
+    Snat(Vec<cloudengine::models::Routers>),
+    Network(Vec<cloudengine::models::NetworkRouter>),
 }
 
-pub fn format_router_rows(routers: &[Routers], long: bool) -> String {
-    if long {
-        format_router_tree(routers)
-    } else {
-        let rows: Vec<RouterRow> = routers
-            .iter()
-            .map(|r| RouterRow {
-                id: r.id.to_string(),
-                name: r.name.clone(),
-                status: r.status.to_string(),
-                bandwidth: format!("{} Mbps", r.bandwidth),
-                ip: r.ip_address.clone(),
-            })
-            .collect();
-        format_table(&rows)
+pub async fn list_routers(
+    client: &cloudengine::ComputeClient<'_>,
+    r#type: crate::vpc::RouterType,
+) -> Result<RoutersListResult, ComputeError> {
+    match r#type {
+        crate::vpc::RouterType::Snat => {
+            let snat_routers = client.list_routers().await?;
+            Ok(RoutersListResult::Snat(snat_routers))
+        }
+        crate::vpc::RouterType::Network => {
+            let network_routers = client.list_network_routers(None, None).await?;
+            Ok(RoutersListResult::Network(network_routers))
+        }
+    }
+}
+
+pub async fn delete_router(
+    client: &cloudengine::ComputeClient<'_>,
+    router_id: &str,
+    r#type: crate::vpc::RouterType,
+) -> Result<serde_json::Value, ComputeError> {
+    let id = router_id.parse().map_err(|_| {
+        ComputeError::validation(
+            cloudengine::Service::VpcApi,
+            None,
+            format!("Invalid router ID: {}", router_id),
+        )
+    })?;
+
+    match r#type {
+        crate::vpc::RouterType::Snat => {
+            client.delete_router(id).await
+        }
+        crate::vpc::RouterType::Network => {
+            client.delete_network_router(id).await
+        }
+    }
+}
+
+pub fn format_router_rows(
+    result: &RoutersListResult,
+    long: bool,
+) -> String {
+    match result {
+        RoutersListResult::Snat(snat_routers) => {
+            if long {
+                format_router_tree(snat_routers)
+            } else {
+                let rows: Vec<RouterRow> = snat_routers
+                    .iter()
+                    .map(|r| RouterRow {
+                        id: r.id.to_string(),
+                        name: r.name.clone(),
+                        status: r.status.to_string(),
+                        bandwidth: format!("{} Mbps", r.bandwidth),
+                        ip: r.ip_address.clone(),
+                    })
+                    .collect();
+                format_table(&rows)
+            }
+        }
+        RoutersListResult::Network(network_routers) => {
+            if long {
+                let rows: Vec<NetworkRouterRowLong> = network_routers
+                    .iter()
+                    .map(|r| NetworkRouterRowLong {
+                        id: r.id.to_string(),
+                        name: r.name.clone(),
+                        status: r.status.clone(),
+                        description: r.description.clone().unwrap_or_else(|| "-".to_string()),
+                        created: format_date(&r.create_time),
+                        updated: r.update_time.as_ref().map(|t| format_date(t)).unwrap_or_else(|| "-".to_string()),
+                    })
+                    .collect();
+                format_table(&rows)
+            } else {
+                let rows: Vec<NetworkRouterRow> = network_routers
+                    .iter()
+                    .map(|r| NetworkRouterRow {
+                        id: r.id.to_string(),
+                        name: r.name.clone(),
+                        status: r.status.clone(),
+                        description: r.description.clone().unwrap_or_else(|| "-".to_string()),
+                        created: format_date(&r.create_time),
+                    })
+                    .collect();
+                format_table(&rows)
+            }
+        }
     }
 }
 

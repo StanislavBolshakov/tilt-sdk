@@ -1,9 +1,25 @@
 pub mod commands;
 
-use clap::{Args, Subcommand};
+use clap::{Args, Subcommand, ValueEnum};
 
 use crate::cli::OutputFormat;
 use tilt_sdk_cloudengine as cloudengine;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Default)]
+pub enum RouterType {
+    #[default]
+    Snat,
+    Network,
+}
+
+impl std::fmt::Display for RouterType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            RouterType::Snat => write!(f, "snat"),
+            RouterType::Network => write!(f, "network"),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum NetworkAction {
@@ -11,6 +27,11 @@ pub enum NetworkAction {
     List {
         #[command(flatten)]
         list_opts: NetworkListOpts,
+    },
+    #[command(about = "Delete a network")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: NetworkDeleteOpts,
     },
 }
 
@@ -20,6 +41,13 @@ pub struct NetworkListOpts {
     pub format: Option<OutputFormat>,
     #[arg(long, help = "Show detailed info")]
     pub long: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct NetworkDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub network_id: String,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -60,6 +88,11 @@ pub enum PortAction {
         #[command(flatten)]
         list_opts: PortListOpts,
     },
+    #[command(about = "Delete a port")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: PortDeleteOpts,
+    },
 }
 
 #[derive(Debug, Clone, Args)]
@@ -90,6 +123,11 @@ pub enum SecurityGroupAction {
         #[command(flatten)]
         show_opts: SecurityGroupShowOpts,
     },
+    #[command(about = "Delete a security group")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: SecurityGroupDeleteOpts,
+    },
 }
 
 #[derive(Debug, Clone, Args)]
@@ -106,6 +144,13 @@ pub struct SecurityGroupListOpts {
 
 #[derive(Debug, Clone, Args)]
 pub struct SecurityGroupShowOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub id: String,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct SecurityGroupDeleteOpts {
     #[arg(short, long, help = "Output format [table]")]
     pub format: Option<OutputFormat>,
     pub id: String,
@@ -151,10 +196,15 @@ pub struct RegionListOpts {
 
 #[derive(Debug, Clone, Subcommand)]
 pub enum RouterAction {
-    #[command(about = "List SNAT routers")]
+    #[command(about = "List routers (SNAT or network)")]
     List {
         #[command(flatten)]
         list_opts: RouterListOpts,
+    },
+    #[command(about = "Delete a router (SNAT or network)")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: RouterDeleteOpts,
     },
 }
 
@@ -164,6 +214,17 @@ pub struct RouterListOpts {
     pub format: Option<OutputFormat>,
     #[arg(long, help = "Show detailed info")]
     pub long: bool,
+    #[arg(short = 't', long, help = "Router type [snat, network]")]
+    pub r#type: RouterType,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct RouterDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    #[arg(short = 't', long, help = "Router type [snat, network]")]
+    pub r#type: RouterType,
+    pub router_id: String,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -172,6 +233,11 @@ pub enum RouteTableAction {
     List {
         #[command(flatten)]
         list_opts: RouteTableListOpts,
+    },
+    #[command(about = "Delete a route table")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: RouteTableDeleteOpts,
     },
 }
 
@@ -185,12 +251,31 @@ pub struct RouteTableListOpts {
     pub page: Option<u32>,
 }
 
+#[derive(Debug, Clone, Args)]
+pub struct PortDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub port_id: String,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct RouteTableDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub id: String,
+}
+
 #[derive(Debug, Clone, Subcommand)]
 pub enum VipAction {
     #[command(about = "List virtual IPs")]
     List {
         #[command(flatten)]
         list_opts: VipListOpts,
+    },
+    #[command(about = "Delete a VIP")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: VipDeleteOpts,
     },
 }
 
@@ -202,12 +287,24 @@ pub struct VipListOpts {
     pub long: bool,
 }
 
+#[derive(Debug, Clone, Args)]
+pub struct VipDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub vip_id: String,
+}
+
 #[derive(Debug, Clone, Subcommand)]
 pub enum FipAction {
     #[command(about = "List floating IPs")]
     List {
         #[command(flatten)]
         list_opts: FipListOpts,
+    },
+    #[command(about = "Delete a floating IP")]
+    Delete {
+        #[command(flatten)]
+        delete_opts: FipDeleteOpts,
     },
 }
 
@@ -217,6 +314,13 @@ pub struct FipListOpts {
     pub format: Option<OutputFormat>,
     #[arg(long, help = "Show detailed info")]
     pub long: bool,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct FipDeleteOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    pub fip_id: String,
 }
 
 pub async fn handle_network_action(
@@ -246,6 +350,24 @@ pub async fn handle_network_action(
                 std::process::exit(1);
             }
         },
+        NetworkAction::Delete { delete_opts } => {
+            match commands::delete_network(compute, &delete_opts.network_id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Network {} deleted successfully", delete_opts.network_id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }
 
@@ -347,6 +469,24 @@ pub async fn handle_port_action(
                 }
             }
         }
+        PortAction::Delete { delete_opts } => {
+            match commands::delete_port(compute, &delete_opts.port_id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Port {} deleted successfully", delete_opts.port_id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }
 
@@ -397,6 +537,24 @@ pub async fn handle_security_group_action(
                         }
                         OutputFormat::Json => {
                             println!("{}", serde_json::to_string_pretty(&rules).unwrap());
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SecurityGroupAction::Delete { delete_opts } => {
+            match commands::delete_security_group(compute, &delete_opts.id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Security group {} deleted successfully", delete_opts.id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
                         }
                     }
                 }
@@ -481,27 +639,54 @@ pub async fn handle_router_action(
     format: Option<OutputFormat>,
 ) {
     match action {
-        RouterAction::List { list_opts } => match commands::list_routers(compute).await {
-            Ok(routers) => {
-                let table = commands::format_router_rows(&routers, list_opts.long);
-                match format.unwrap_or(OutputFormat::Table) {
-                    OutputFormat::Table => {
-                        println!("{}", table);
-                        println!(
-                            "{}",
-                            crate::output::format_count(routers.len(), "router", "routers")
-                        );
-                    }
-                    OutputFormat::Json => {
-                        println!("{}", serde_json::to_string_pretty(&routers).unwrap());
+        RouterAction::List { list_opts } => {
+            match commands::list_routers(compute, list_opts.r#type).await {
+                Ok(result) => {
+                    let table = commands::format_router_rows(&result, list_opts.long);
+                    match format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("{}", table);
+                            let count = match result {
+                                commands::RoutersListResult::Snat(r) => r.len(),
+                                commands::RoutersListResult::Network(r) => r.len(),
+                            };
+                            println!("{}", crate::output::format_count(count, "router", "routers"));
+                        }
+                        OutputFormat::Json => {
+                            let json = match result {
+                                commands::RoutersListResult::Snat(r) =>
+                                    serde_json::json!({"snat_routers": r}),
+                                commands::RoutersListResult::Network(r) =>
+                                    serde_json::json!({"network_routers": r}),
+                            };
+                            println!("{}", serde_json::to_string_pretty(&json).unwrap());
+                        }
                     }
                 }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
             }
-            Err(e) => {
-                tracing::error!(target: "tilt-cli", "{}", e);
-                std::process::exit(1);
+        }
+        RouterAction::Delete { delete_opts } => {
+            match commands::delete_router(compute, &delete_opts.router_id, delete_opts.r#type).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Router {} ({}) deleted successfully", delete_opts.router_id, delete_opts.r#type.to_string());
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
             }
-        },
+        }
     }
 }
 
@@ -538,6 +723,24 @@ pub async fn handle_route_table_action(
                 }
             }
         }
+        RouteTableAction::Delete { delete_opts } => {
+            match commands::delete_route_table(compute, &delete_opts.id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Route table {} deleted successfully", delete_opts.id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }
 
@@ -565,6 +768,24 @@ pub async fn handle_vip_action(
                 std::process::exit(1);
             }
         },
+        VipAction::Delete { delete_opts } => {
+            match commands::delete_vip(compute, &delete_opts.vip_id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("VIP {} deleted successfully", delete_opts.vip_id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }
 
@@ -592,5 +813,23 @@ pub async fn handle_fip_action(
                 std::process::exit(1);
             }
         },
+        FipAction::Delete { delete_opts } => {
+            match commands::delete_fip(compute, &delete_opts.fip_id).await {
+                Ok(json) => {
+                    match delete_opts.format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("Floating IP {} deleted successfully", delete_opts.fip_id);
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", json);
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
     }
 }

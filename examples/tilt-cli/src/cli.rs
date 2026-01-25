@@ -137,7 +137,7 @@ pub enum Command {
         #[command(subcommand)]
         action: BackupAction,
     },
-    #[command(about = "SNAT router operations")]
+    #[command(about = "Router operations (SNAT or network)")]
     Router {
         #[command(subcommand)]
         action: RouterAction,

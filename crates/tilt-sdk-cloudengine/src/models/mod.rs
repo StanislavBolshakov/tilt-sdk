@@ -24,6 +24,6 @@ pub use network::{
     SecurityGroupRule, SecurityGroups, Subnets, VirtualIp, VirtualIpFixedIp, VirtualIps,
 };
 
-pub use routers::{RouterNic, RouterStatus, Routers};
+pub use routers::{NetworkRouter, RouterNic, RouterStatus, Routers};
 
 pub use storage::{Snapshot, Snapshots, VolumeStatus, VolumeType, Volumes};

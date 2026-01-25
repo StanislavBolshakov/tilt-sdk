@@ -1,9 +1,9 @@
 use crate::client::paginate::paginate;
-use crate::client::responses::RouteTablesResponse;
+use crate::client::responses::{NetworkRoutersResponse, RouteTablesResponse};
 use crate::error::{ComputeError, Result, Service};
 use crate::models::{
-    FloatingIps, NetworkInterface, NetworkItem, Networks, RouteTables, Routers, SecurityGroupRule,
-    SecurityGroups, Subnets, VirtualIps,
+    FloatingIps, NetworkInterface, NetworkItem, NetworkRouter, Networks, RouteTables, Routers,
+    SecurityGroupRule, SecurityGroups, Subnets, VirtualIps,
 };
 use tilt_sdk::Client;
 use tracing::{Instrument, debug, info_span};
@@ -201,6 +201,42 @@ impl<'a> NetworkClient<'a> {
         self.delete(&path).await
     }
 
+    pub async fn delete_network(&self, network_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/networks/{}",
+            self.client.project(),
+            network_id
+        );
+        self.delete(&path).await
+    }
+
+    pub async fn delete_fip(&self, fip_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/public-ip-addresses/{}",
+            self.client.project(),
+            fip_id
+        );
+        self.delete(&path).await
+    }
+
+    pub async fn delete_security_group(&self, security_group_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/security-groups/{}",
+            self.client.project(),
+            security_group_id
+        );
+        self.delete(&path).await
+    }
+
+    pub async fn delete_route_table(&self, route_table_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/network_route_tables/{}",
+            self.client.project(),
+            route_table_id
+        );
+        self.delete(&path).await
+    }
+
     pub async fn list_ports(
         &self,
         limit: Option<u32>,
@@ -331,6 +367,15 @@ impl<'a> NetworkClient<'a> {
         Ok(response.list.into_iter().map(Into::into).collect())
     }
 
+    pub async fn delete_port(&self, port_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/network-interfaces/{}",
+            self.client.project(),
+            port_id
+        );
+        self.delete(&path).await
+    }
+
     pub async fn list_route_tables(
         &self,
         limit: Option<u32>,
@@ -387,5 +432,70 @@ impl<'a> NetworkClient<'a> {
         );
         let response: super::responses::SecurityGroupWrapper = self.get(&path).await?;
         Ok(response.into())
+    }
+
+    pub async fn list_network_routers(
+        &self,
+        limit: Option<u32>,
+        page: Option<u32>,
+    ) -> Result<Vec<NetworkRouter>> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/routers",
+            self.client.project()
+        );
+
+        let this = &self;
+        paginate(
+            limit,
+            page,
+            Service::VpcApi,
+            &path,
+            |page: u32, limit: u32| {
+                let path = path.clone();
+                async move {
+                    let response: NetworkRoutersResponse = this
+                        .get_with_query(
+                            &path,
+                            &[
+                                ("include", "total_count"),
+                                ("page", &page.to_string()),
+                                ("per_page", &limit.to_string()),
+                            ],
+                        )
+                        .await?;
+                    let items: Vec<NetworkRouter> =
+                        response.list.into_iter().map(Into::into).collect();
+                    Ok((items, response.meta.total_count))
+                }
+            },
+        )
+        .await
+    }
+
+    pub async fn delete_network_router(&self, router_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/routers/{}",
+            self.client.project(),
+            router_id
+        );
+        self.delete(&path).await
+    }
+
+    pub async fn delete_router(&self, router_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/snat-routers/{}",
+            self.client.project(),
+            router_id
+        );
+        self.delete(&path).await
+    }
+
+    pub async fn delete_vip(&self, vip_id: Uuid) -> Result<serde_json::Value> {
+        let path = format!(
+            "/vpc/api/v1/projects/{}/virtual-ip-addresses/{}",
+            self.client.project(),
+            vip_id
+        );
+        self.delete(&path).await
     }
 }
