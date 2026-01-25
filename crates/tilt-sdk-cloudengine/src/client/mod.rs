@@ -246,7 +246,6 @@ impl<'a> ComputeClient<'a> {
         self.network.delete_network(network_id).await
     }
 
-<<<<<<< HEAD
     pub async fn delete_fip(&self, fip_id: Uuid) -> Result<serde_json::Value> {
         self.network.delete_fip(fip_id).await
     }
@@ -259,8 +258,6 @@ impl<'a> ComputeClient<'a> {
         self.network.delete_route_table(route_table_id).await
     }
 
-=======
->>>>>>> 617f703e01ec429df6fdc874184eb8915ea70dc0
     pub async fn list_ports(
         &self,
         limit: Option<u32>,
