@@ -50,6 +50,7 @@ pub async fn delete_network(
     client.delete_network(id).await
 }
 
+<<<<<<< HEAD
 pub async fn delete_fip(
     client: &cloudengine::ComputeClient<'_>,
     fip_id: &str,
@@ -106,6 +107,8 @@ pub async fn delete_route_table(
     client.delete_route_table(id).await
 }
 
+=======
+>>>>>>> 617f703e01ec429df6fdc874184eb8915ea70dc0
 pub async fn list_ports(
     client: &cloudengine::ComputeClient<'_>,
     limit: Option<u32>,

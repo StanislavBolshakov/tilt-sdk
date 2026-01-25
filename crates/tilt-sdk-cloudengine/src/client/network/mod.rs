@@ -210,6 +210,7 @@ impl<'a> NetworkClient<'a> {
         self.delete(&path).await
     }
 
+<<<<<<< HEAD
     pub async fn delete_fip(&self, fip_id: Uuid) -> Result<serde_json::Value> {
         let path = format!(
             "/vpc/api/v1/projects/{}/public-ip-addresses/{}",
@@ -237,6 +238,8 @@ impl<'a> NetworkClient<'a> {
         self.delete(&path).await
     }
 
+=======
+>>>>>>> 617f703e01ec429df6fdc874184eb8915ea70dc0
     pub async fn list_ports(
         &self,
         limit: Option<u32>,
