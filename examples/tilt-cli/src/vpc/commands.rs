@@ -1,4 +1,5 @@
 use cloudengine::client::PortFilter;
+use cloudengine::client::portal::{CreateSshKeyRequest, SshKeyDetails};
 use cloudengine::models::{FloatingIps, NetworkItem, RouteTables, VirtualIps};
 use cloudengine::{ComputeError, Networks, SecurityGroupRule, SecurityGroups, SshKeys, Subnets};
 use tilt_sdk_cloudengine as cloudengine;
@@ -50,7 +51,6 @@ pub async fn delete_network(
     client.delete_network(id).await
 }
 
-<<<<<<< HEAD
 pub async fn delete_fip(
     client: &cloudengine::ComputeClient<'_>,
     fip_id: &str,
@@ -107,8 +107,6 @@ pub async fn delete_route_table(
     client.delete_route_table(id).await
 }
 
-=======
->>>>>>> 617f703e01ec429df6fdc874184eb8915ea70dc0
 pub async fn list_ports(
     client: &cloudengine::ComputeClient<'_>,
     limit: Option<u32>,
@@ -150,6 +148,22 @@ pub async fn list_ssh_keys(
     page: Option<u32>,
 ) -> Result<Vec<SshKeys>, ComputeError> {
     client.list_ssh_keys(limit, page).await
+}
+
+pub async fn create_ssh_key(
+    client: &cloudengine::ComputeClient<'_>,
+    name: String,
+    login: String,
+    public_keys: Vec<String>,
+) -> Result<SshKeys, ComputeError> {
+    let request = CreateSshKeyRequest {
+        ssh_key: SshKeyDetails {
+            public_keys,
+            login,
+            name,
+        },
+    };
+    client.create_ssh_key(request).await
 }
 
 pub fn format_network_rows(networks: &[Networks], long: bool) -> String {

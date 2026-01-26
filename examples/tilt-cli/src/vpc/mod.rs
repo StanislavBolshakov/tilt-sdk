@@ -163,6 +163,11 @@ pub enum SshKeyAction {
         #[command(flatten)]
         list_opts: SshKeyListOpts,
     },
+    #[command(about = "Create an SSH key")]
+    Create {
+        #[command(flatten)]
+        create_opts: SshKeyCreateOpts,
+    },
 }
 
 #[derive(Debug, Clone, Args)]
@@ -173,6 +178,18 @@ pub struct SshKeyListOpts {
     pub limit: Option<u32>,
     #[arg(short = 'P', long, help = "Page number")]
     pub page: Option<u32>,
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct SshKeyCreateOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+    #[arg(short, long, help = "SSH key name")]
+    pub name: String,
+    #[arg(short, long, help = "SSH login user")]
+    pub login: String,
+    #[arg(long, required = true, help = "Public SSH keys (can be specified multiple times)")]
+    pub public_key: Vec<String>,
 }
 
 #[derive(Debug, Clone, Subcommand)]
@@ -587,6 +604,32 @@ pub async fn handle_ssh_key_action(
                         }
                         OutputFormat::Json => {
                             println!("{}", serde_json::to_string_pretty(&keys).unwrap());
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+        SshKeyAction::Create { create_opts } => {
+            match commands::create_ssh_key(
+                compute,
+                create_opts.name,
+                create_opts.login,
+                create_opts.public_key,
+            )
+            .await
+            {
+                Ok(key) => {
+                    match format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("SSH key created successfully:");
+                            println!("{}", commands::format_ssh_key_rows(&[key]));
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", serde_json::to_string_pretty(&key).unwrap());
                         }
                     }
                 }

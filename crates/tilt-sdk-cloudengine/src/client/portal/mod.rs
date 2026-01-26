@@ -1,10 +1,23 @@
 use crate::client::paginate::paginate;
 use crate::error::{ComputeError, Result, Service};
 use crate::models::SshKeys;
+use serde::{Deserialize, Serialize};
 use tilt_sdk::Client;
 use tracing::{Instrument, debug, info_span};
 
 const PORTAL_SERVICE: Service = Service::PortalApi;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateSshKeyRequest {
+    pub ssh_key: SshKeyDetails,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SshKeyDetails {
+    pub public_keys: Vec<String>,
+    pub login: String,
+    pub name: String,
+}
 
 pub struct PortalClient<'a> {
     client: &'a Client,
@@ -26,6 +39,26 @@ impl<'a> PortalClient<'a> {
             match self.client.http().get_with_query(path, query).await {
                 Ok(response) => {
                     debug!(path, ?query, "Successfully fetched resources");
+                    Ok(response)
+                }
+                Err(e) => Err(ComputeError::from_sdk_error(e, PORTAL_SERVICE, Some(path))),
+            }
+        }
+        .instrument(span)
+        .await
+    }
+
+    async fn post<B: serde::Serialize, T: serde::de::DeserializeOwned>(
+        &self,
+        path: &str,
+        body: &B,
+    ) -> Result<T> {
+        let span = info_span!("portal_post", path);
+        async move {
+            debug!(path, "Creating resource");
+            match self.client.http().post(path, body).await {
+                Ok(response) => {
+                    debug!(path, "Successfully created resource");
                     Ok(response)
                 }
                 Err(e) => Err(ComputeError::from_sdk_error(e, PORTAL_SERVICE, Some(path))),
@@ -68,5 +101,11 @@ impl<'a> PortalClient<'a> {
             },
         )
         .await
+    }
+
+    pub async fn create_ssh_key(&self, request: CreateSshKeyRequest) -> Result<SshKeys> {
+        let path = format!("/portal/api/v2/projects/{}/ssh_keys", self.client.project());
+        let response: super::responses::SshKeyWrapper = self.post(&path, &request).await?;
+        Ok(response.into())
     }
 }
