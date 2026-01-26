@@ -331,3 +331,51 @@ pub async fn handle_placement_action(
         },
     }
 }
+
+#[derive(Debug, Clone, Subcommand)]
+pub enum AzAction {
+    #[command(about = "List availability zones")]
+    List {
+        #[command(flatten)]
+        list_opts: AzListOpts,
+    },
+}
+
+#[derive(Debug, Clone, Args)]
+pub struct AzListOpts {
+    #[arg(short, long, help = "Output format [table]")]
+    pub format: Option<OutputFormat>,
+}
+
+    pub async fn handle_az_action(
+    compute: &cloudengine::ComputeClient<'_>,
+    action: AzAction,
+    format: Option<OutputFormat>,
+) {
+    match action {
+        AzAction::List { list_opts: _ } => {
+            match commands::list_availability_zones(compute).await {
+                Ok(zones) => {
+                    let table = commands::format_availability_zone_rows(&zones);
+                    match format.unwrap_or(OutputFormat::Table) {
+                        OutputFormat::Table => {
+                            println!("{}", table);
+                            println!(
+                                "{}",
+                                crate::output::format_count(zones.len(), "availability zone", "availability zones")
+                            );
+                        }
+                        OutputFormat::Json => {
+                            println!("{}", serde_json::to_string_pretty(&zones).unwrap());
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(target: "tilt-cli", "{}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    }
+}
+

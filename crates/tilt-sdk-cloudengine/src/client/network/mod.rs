@@ -83,7 +83,7 @@ impl<'a> NetworkClient<'a> {
         let span = info_span!("network_delete", path);
         async move {
             debug!(path, "Deleting resource");
-            self.client.http().delete::<serde_json::Value>(&path).await
+            self.client.http().delete::<serde_json::Value>(path).await
                 .map_err(|e| ComputeError::from_sdk_error(e, VPC_SERVICE, Some(path)))
         }
         .instrument(span)

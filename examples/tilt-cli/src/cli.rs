@@ -1,10 +1,13 @@
 use clap::{Parser, Subcommand, ValueEnum};
 
-pub use crate::compute::{FlavorAction, ImageAction, PlacementAction, ServerAction, TaskAction};
+pub use crate::compute::{
+    AzAction, FlavorAction, ImageAction, PlacementAction, ServerAction, TaskAction,
+};
+pub use crate::portal::SshKeyAction;
 pub use crate::storage::{BackupAction, SnapshotAction, VolumeAction};
 pub use crate::vpc::{
     FipAction, NetworkAction, PortAction, RegionAction, RouteTableAction, RouterAction,
-    SecurityGroupAction, SshKeyAction, SubnetAction, VipAction,
+    SecurityGroupAction, SubnetAction, VipAction,
 };
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -125,7 +128,7 @@ pub enum Command {
     #[command(about = "Availability zone operations")]
     Az {
         #[command(subcommand)]
-        action: RegionAction,
+        action: AzAction,
     },
     #[command(about = "Placement policy operations")]
     Placement {

@@ -1,6 +1,7 @@
 pub mod common;
 pub mod compute;
 pub mod network_tree;
+pub mod portal;
 pub mod router_tree;
 pub mod storage;
 pub mod table;
@@ -12,14 +13,14 @@ pub use compute::{
     ServersRowLong, TaskRow, TaskRowDetail,
 };
 pub use network_tree::format_port_tree;
+pub use portal::SshKeyRow;
 pub use router_tree::format_router_tree;
 pub use storage::{BackupRow, BackupRowLong, SnapshotRow, VolumeRow, VolumeRowLong, VolumeShowRow};
 pub use table::{format_table, ToStringRow};
 pub use vpc::{
     FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRouterRow, NetworkRouterRowLong,
     NetworkRow, NetworkRowLong, NicRow, RouteTableRow, RouterRow, SecurityGroupRow,
-    SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
-    VipRowLong,
+    SecurityGroupRowLong, SecurityGroupRuleRow, SubnetRow, SubnetRowLong, VipRow, VipRowLong,
 };
 
 #[macro_export]

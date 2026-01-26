@@ -166,12 +166,8 @@ impl<'a> ComputeClient<'a> {
         self.storage.list_snapshots(limit, page).await
     }
 
-    pub async fn list_regions(
-        &self,
-        limit: Option<u32>,
-        page: Option<u32>,
-    ) -> Result<Vec<Regions>> {
-        self.compute.list_regions(limit, page).await
+    pub async fn list_regions(&self) -> Result<Vec<Regions>> {
+        self.compute.list_regions().await
     }
 
     pub async fn list_availability_zones(&self) -> Result<Vec<AvailabilityZone>> {
@@ -236,6 +232,10 @@ impl<'a> ComputeClient<'a> {
 
     pub async fn create_ssh_key(&self, request: crate::client::portal::CreateSshKeyRequest) -> Result<SshKeys> {
         self.portal.create_ssh_key(request).await
+    }
+
+    pub async fn delete_ssh_key(&self, ssh_key_id: uuid::Uuid) -> Result<serde_json::Value> {
+        self.portal.delete_ssh_key(ssh_key_id).await
     }
 
     pub async fn list_subnets(&self, network_id: Option<&str>) -> Result<Vec<Subnets>> {

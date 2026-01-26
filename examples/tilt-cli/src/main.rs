@@ -7,6 +7,7 @@ mod client;
 mod completion;
 mod compute;
 mod output;
+mod portal;
 mod storage;
 mod vpc;
 
@@ -84,14 +85,14 @@ async fn main() -> Result<()> {
             vpc::handle_security_group_action(&compute, action.clone(), None).await
         }
         cli::Command::SshKey { action } => {
-            vpc::handle_ssh_key_action(&compute, action.clone(), None).await
+            portal::handle_ssh_key_action(&compute, action.clone(), None).await
         }
         cli::Command::Region { action } => {
             vpc::handle_region_action(&compute, action.clone(), None).await
         }
-        cli::Command::Az { action } => {
-            vpc::handle_region_action(&compute, action.clone(), None).await
-        }
+cli::Command::Az { action } => {
+    compute::handle_az_action(&compute, action.clone(), None).await
+}
         cli::Command::Router { action } => {
             vpc::handle_router_action(&compute, action.clone(), None).await
         }

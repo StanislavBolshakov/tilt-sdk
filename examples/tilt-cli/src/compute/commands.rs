@@ -1,5 +1,5 @@
 use cloudengine::{
-    ComputeError, Flavors, Images, Instances, PlacementPolicy, Regions, Service, Tasks,
+    ComputeError, AvailabilityZone, Flavors, Images, Instances, PlacementPolicy, Regions, Service, Tasks,
 };
 use tilt_sdk_cloudengine as cloudengine;
 
@@ -51,10 +51,14 @@ pub async fn show_task(
 
 pub async fn list_regions(
     client: &cloudengine::ComputeClient<'_>,
-    limit: Option<u32>,
-    page: Option<u32>,
 ) -> Result<Vec<Regions>, ComputeError> {
-    client.list_regions(limit, page).await
+    client.list_regions().await
+}
+
+pub async fn list_availability_zones(
+    client: &cloudengine::ComputeClient<'_>,
+) -> Result<Vec<AvailabilityZone>, ComputeError> {
+    client.list_availability_zones().await
 }
 
 pub async fn show_image(
@@ -258,6 +262,18 @@ pub fn format_placement_rows(policies: &[PlacementPolicy]) -> String {
             name: p.name.clone(),
             policy_type: format_opt_ref(&p.policy_type),
             availability_zone: format_opt_ref(&p.availability_zone),
+        })
+        .collect();
+    format_table(&rows)
+}
+
+pub fn format_availability_zone_rows(zones: &[AvailabilityZone]) -> String {
+    let rows: Vec<RegionRow> = zones
+        .iter()
+        .map(|z| RegionRow {
+            id: z.id.clone(),
+            name: z.name.clone(),
+            description: format_opt_ref(&z.description),
         })
         .collect();
     format_table(&rows)

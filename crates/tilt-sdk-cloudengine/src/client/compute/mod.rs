@@ -320,39 +320,10 @@ impl<'a> ComputeClient<'a> {
         Ok(response.into())
     }
 
-    pub async fn list_regions(
-        &self,
-        limit: Option<u32>,
-        page: Option<u32>,
-    ) -> Result<Vec<Regions>> {
+    pub async fn list_regions(&self) -> Result<Vec<Regions>> {
         let path = format!("/compute/api/v1/projects/{}/regions", self.client.project());
-
-        let this = &self;
-        paginate(
-            limit,
-            page,
-            Service::ComputeApi,
-            &path,
-            |page: u32, limit: u32| {
-                let path = path.clone();
-                async move {
-                    let response: RegionsResponse = this
-                        .get_with_query(
-                            &path,
-                            &[
-                                ("include", "total_count"),
-                                ("page", &page.to_string()),
-                                ("per_page", &limit.to_string()),
-                            ],
-                        )
-                        .await?;
-                    let items: Vec<Regions> = response.iter().cloned().map(Into::into).collect();
-                    let total_count = response.len() as u32;
-                    Ok((items, total_count))
-                }
-            },
-        )
-        .await
+        let response: RegionsResponse = self.get_with_query(&path, &[]).await?;
+        Ok(response.into_iter().map(Into::into).collect())
     }
 
     pub async fn list_availability_zones(&self) -> Result<Vec<AvailabilityZone>> {

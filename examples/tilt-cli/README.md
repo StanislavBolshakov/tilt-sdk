@@ -10,6 +10,8 @@
 | Image | ✅ | ✅ | - | - | `tilt-cli image list` / `tilt-cli image show <ID>` |
 | SSH Key | ✅ | - | - | - | `tilt-cli ssh-key list` |
 | Placement Policy | ✅ | - | - | - | `tilt-cli placement list` |
+| **Portal** | | | | |
+| SSH Key | ✅ | - | ✅ | ✅ | `tilt-cli ssh-key list` |
 | **Storage** | | | | |
 | Volume | ✅ | ✅ | - | - | `tilt-cli volume list` / `tilt-cli volume show <ID>` |
 | Snapshot | ✅ | - | - | - | `tilt-cli snapshot list` |
@@ -17,8 +19,8 @@
 | **Network** | | | | |
 | Network | ✅ | - | ✅ | - | `tilt-cli network list` / `tilt-cli network delete <ID>` |
 | Subnet | ✅ | - | ✅ | - | `tilt-cli subnet list` / `tilt-cli subnet delete <ID>` |
-| Port | ✅ | - | - | - | `tilt-cli port list` |
-| Security Group | ✅ | - | ✅ | - | `tilt-cli security-group list` / `tilt-cli security-group show <ID>` / `tilt-cli security-group delete <ID>` |
+| Port | ✅ | - | ✅ | - | `tilt-cli port list` |
+| Security Group | ✅ | ✅ | ✅ | - | `tilt-cli security-group list` / `tilt-cli security-group show <ID>` / `tilt-cli security-group delete <ID>` |
 | SNAT Router | ✅ | - | ✅ | - | `tilt-cli router list --type snat` / `tilt-cli router delete --type snat <ID>` |
 | Network Router | ✅ | - | ✅ | - | `tilt-cli router list --type network` / `tilt-cli router delete --type network <ID>` |
 | Route Table | ✅ | - | ✅ | - | `tilt-cli route-table list` / `tilt-cli route-table delete <ID>` |

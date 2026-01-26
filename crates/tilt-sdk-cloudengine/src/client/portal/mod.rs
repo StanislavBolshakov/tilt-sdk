@@ -68,6 +68,17 @@ impl<'a> PortalClient<'a> {
         .await
     }
 
+    async fn delete(&self, path: &str) -> Result<serde_json::Value> {
+        let span = info_span!("portal_delete", path);
+        async move {
+            debug!(path, "Deleting resource");
+            self.client.http().delete::<serde_json::Value>(path).await
+                .map_err(|e| ComputeError::from_sdk_error(e, PORTAL_SERVICE, Some(path)))
+        }
+        .instrument(span)
+        .await
+    }
+
     pub async fn list_ssh_keys(
         &self,
         limit: Option<u32>,
@@ -107,5 +118,10 @@ impl<'a> PortalClient<'a> {
         let path = format!("/portal/api/v2/projects/{}/ssh_keys", self.client.project());
         let response: super::responses::SshKeyWrapper = self.post(&path, &request).await?;
         Ok(response.into())
+    }
+
+    pub async fn delete_ssh_key(&self, ssh_key_id: uuid::Uuid) -> Result<serde_json::Value> {
+        let path = format!("/portal/api/v2/projects/{}/ssh_keys/{}", self.client.project(), ssh_key_id);
+        self.delete(&path).await
     }
 }

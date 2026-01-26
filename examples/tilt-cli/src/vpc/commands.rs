@@ -1,13 +1,12 @@
 use cloudengine::client::PortFilter;
-use cloudengine::client::portal::{CreateSshKeyRequest, SshKeyDetails};
-use cloudengine::models::{FloatingIps, NetworkItem, RouteTables, VirtualIps};
-use cloudengine::{ComputeError, Networks, SecurityGroupRule, SecurityGroups, SshKeys, Subnets};
+use cloudengine::models::{FloatingIps, NetworkItem, RouteTables, SecurityGroupRule, VirtualIps};
+use cloudengine::{ComputeError, Networks, SecurityGroups, Subnets};
 use tilt_sdk_cloudengine as cloudengine;
 
 use crate::output::{
     FipRow, FipRowLong, InstanceRow, NetworkItemRow, NetworkRow, NetworkRowLong, NicRow, NetworkRouterRow, NetworkRouterRowLong,
-    RouteTableRow, RouterRow, SecurityGroupRow, SecurityGroupRowLong, SecurityGroupRuleRow, SshKeyRow, SubnetRow, SubnetRowLong, VipRow,
-    VipRowLong, format_date, format_opt_ref, format_port_tree, format_router_tree, format_table,
+    RouteTableRow, RouterRow, SecurityGroupRowLong, SecurityGroupRuleRow, SubnetRow, SubnetRowLong, VipRow,
+    VipRowLong, SecurityGroupRow, format_date, format_opt_ref, format_port_tree, format_router_tree, format_table,
 };
 
 pub async fn list_networks(
@@ -140,30 +139,6 @@ pub async fn list_security_groups(
     page: Option<u32>,
 ) -> Result<Vec<SecurityGroups>, ComputeError> {
     client.list_security_groups(limit, page).await
-}
-
-pub async fn list_ssh_keys(
-    client: &cloudengine::ComputeClient<'_>,
-    limit: Option<u32>,
-    page: Option<u32>,
-) -> Result<Vec<SshKeys>, ComputeError> {
-    client.list_ssh_keys(limit, page).await
-}
-
-pub async fn create_ssh_key(
-    client: &cloudengine::ComputeClient<'_>,
-    name: String,
-    login: String,
-    public_keys: Vec<String>,
-) -> Result<SshKeys, ComputeError> {
-    let request = CreateSshKeyRequest {
-        ssh_key: SshKeyDetails {
-            public_keys,
-            login,
-            name,
-        },
-    };
-    client.create_ssh_key(request).await
 }
 
 pub fn format_network_rows(networks: &[Networks], long: bool) -> String {
@@ -375,20 +350,7 @@ pub fn format_security_group_rows(groups: &[SecurityGroups], long: bool) -> Stri
             })
             .collect();
         format_table(&rows)
-    }
-}
-
-pub fn format_ssh_key_rows(keys: &[SshKeys]) -> String {
-    let rows: Vec<SshKeyRow> = keys
-        .iter()
-        .map(|k| SshKeyRow {
-            id: k.id.to_string(),
-            name: k.name.clone(),
-            login: k.login.clone(),
-            created: k.created_at.format("%Y-%m-%d").to_string(),
-        })
-        .collect();
-    format_table(&rows)
+        }
 }
 
 pub enum RoutersListResult {
@@ -536,8 +498,12 @@ pub fn format_security_group_rules(rules: &[SecurityGroupRule]) -> String {
         .iter()
         .map(|r| {
             let ports = match (r.port_range_min, r.port_range_max) {
-                (Some(min), Some(max)) if min == max => min.to_string(),
-                (Some(min), Some(max)) => format!("{}-{}", min, max),
+                (Some(min), Some(max)) if min == max => {
+                    min.to_string()
+                },
+                (Some(min), Some(max)) => {
+                    format!("{}-{}", min, max)
+                },
                 _ => "any".to_string(),
             };
             let remote_ip = format_opt_ref(&r.remote_ip_prefix);
